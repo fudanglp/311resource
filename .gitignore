@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+
+# Local game install and generated reverse-engineering output.
+game/
+extracted/
+scratch/
+
+# OS/editor noise.
+.DS_Store
+*.swp

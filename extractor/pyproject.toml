@@ -1,0 +1,32 @@
+[project]
+name = "san11resource"
+version = "0.1.0"
+description = "San11 resource format research and extraction tools"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "click>=8.1",
+  "pillow>=10",
+  "rich>=13",
+]
+
+[project.scripts]
+san11res = "san11resource.cli:main"
+san11res-extract-all = "san11resource.main:main"
+
+[dependency-groups]
+dev = [
+  "pytest>=8",
+  "ruff>=0.5",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
