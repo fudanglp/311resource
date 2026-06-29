@@ -195,16 +195,16 @@ export function TerrainMapPage() {
   const [groundTextureId, setGroundTextureId] = useState("ground-summer-4802");
   const [diagnosticLayerId, setDiagnosticLayerId] = useState(diagnosticLayers[0].id);
   const [diagnosticOpacity, setDiagnosticOpacity] = useState(45);
-  const [groundStrength, setGroundStrength] = useState(32);
+  const [groundStrength, setGroundStrength] = useState(26);
   const [heightScale, setHeightScale] = useState(14);
   const [heightBias, setHeightBias] = useState(0);
   const [seaLevel, setSeaLevel] = useState(0);
   const [wireframe, setWireframe] = useState(false);
   const [showSea, setShowSea] = useState(true);
   const [showGrid, setShowGrid] = useState(false);
-  const [waterRepeat, setWaterRepeat] = useState(38);
-  const [waterSpeed, setWaterSpeed] = useState(14);
-  const [waterOpacity, setWaterOpacity] = useState(58);
+  const [waterRepeat, setWaterRepeat] = useState(30);
+  const [waterSpeed, setWaterSpeed] = useState(10);
+  const [waterOpacity, setWaterOpacity] = useState(50);
 
   const heightLayer = heightLayers.find((layer) => layer.id === heightLayerId) ?? heightLayers[0];
   const colorLayer = colorLayers.find((layer) => layer.id === colorLayerId) ?? colorLayers[0];
@@ -308,15 +308,15 @@ export function TerrainMapPage() {
                   setGroundTextureId("ground-summer-4802");
                   setDiagnosticLayerId(diagnosticLayers[0].id);
                   setDiagnosticOpacity(45);
-                  setGroundStrength(32);
+                  setGroundStrength(26);
                   setHeightScale(14);
                   setHeightBias(0);
                   setSeaLevel(0);
                   setShowSea(true);
                   setShowGrid(false);
-                  setWaterRepeat(38);
-                  setWaterSpeed(14);
-                  setWaterOpacity(58);
+                  setWaterRepeat(30);
+                  setWaterSpeed(10);
+                  setWaterOpacity(50);
                 }}
                 title="重置地形参数"
               >
@@ -394,16 +394,26 @@ function TerrainViewport({
           heightScale={heightScale}
           heightUrl={heightUrl}
           showGrid={showGrid}
+          waterMaskUrl={waterMaskUrl}
           wireframe={wireframe}
         />
         {showSea ? (
-          <WaterSurface
-            opacity={waterOpacity}
-            repeat={waterRepeat}
-            seaLevel={seaLevel}
-            speed={waterSpeed}
-            waterMaskUrl={waterMaskUrl}
-          />
+          <>
+            <WaterSurface
+              opacity={waterOpacity}
+              repeat={waterRepeat}
+              seaLevel={seaLevel}
+              speed={waterSpeed}
+              waterMaskUrl={waterMaskUrl}
+            />
+            <MistSurface
+              heightBias={heightBias}
+              heightScale={heightScale}
+              heightUrl={heightUrl}
+              seaLevel={seaLevel}
+              waterMaskUrl={waterMaskUrl}
+            />
+          </>
         ) : null}
       </Suspense>
 
@@ -442,6 +452,7 @@ function TerrainMesh({
   heightScale,
   heightUrl,
   showGrid,
+  waterMaskUrl,
   wireframe
 }: {
   colorUrl: string;
@@ -453,9 +464,15 @@ function TerrainMesh({
   heightScale: number;
   heightUrl: string;
   showGrid: boolean;
+  waterMaskUrl: string;
   wireframe: boolean;
 }) {
-  const [diffuseTexture, heightTexture, diagnosticTexture] = useLoader(THREE.TextureLoader, [colorUrl, heightUrl, diagnosticUrl]);
+  const [diffuseTexture, heightTexture, diagnosticTexture, waterMaskTexture] = useLoader(THREE.TextureLoader, [
+    colorUrl,
+    heightUrl,
+    diagnosticUrl,
+    waterMaskUrl
+  ]);
   const groundTileTextures = useLoader(THREE.TextureLoader, groundTileUrls);
   const groundAtlasTexture = useMemo(() => buildGroundAtlasTexture(groundTileTextures), [groundTileTextures]);
 
@@ -472,7 +489,8 @@ function TerrainMesh({
     diagnosticTexture.minFilter = THREE.LinearFilter;
     diagnosticTexture.magFilter = THREE.LinearFilter;
     diagnosticTexture.needsUpdate = true;
-  }, [diagnosticTexture, diffuseTexture, groundAtlasTexture, heightTexture]);
+    configureHeightTexture(waterMaskTexture);
+  }, [diagnosticTexture, diffuseTexture, groundAtlasTexture, heightTexture, waterMaskTexture]);
 
   useEffect(() => {
     return () => {
@@ -493,6 +511,7 @@ function TerrainMesh({
         heightMap={heightTexture}
         heightScale={heightScale}
         showGrid={showGrid}
+        waterMaskMap={waterMaskTexture}
         wireframe={wireframe}
       />
     </mesh>
@@ -583,6 +602,7 @@ function TerrainMaterial({
   heightMap,
   heightScale,
   showGrid,
+  waterMaskMap,
   wireframe
 }: {
   colorMap: THREE.Texture;
@@ -594,6 +614,7 @@ function TerrainMaterial({
   heightMap: THREE.Texture;
   heightScale: number;
   showGrid: boolean;
+  waterMaskMap: THREE.Texture;
   wireframe: boolean;
 }) {
   const uniforms = useMemo(
@@ -606,7 +627,8 @@ function TerrainMaterial({
       heightBias: { value: heightBias },
       heightMap: { value: heightMap },
       heightScale: { value: heightScale },
-      showGrid: { value: showGrid ? 1 : 0 }
+      showGrid: { value: showGrid ? 1 : 0 },
+      waterMaskMap: { value: waterMaskMap }
     }),
     [
       colorMap,
@@ -617,7 +639,8 @@ function TerrainMaterial({
       heightBias,
       heightMap,
       heightScale,
-      showGrid
+      showGrid,
+      waterMaskMap
     ]
   );
 
@@ -637,13 +660,26 @@ const terrainVertexShader = `
   uniform float heightScale;
 
   varying float vHeight;
+  varying vec3 vWorldNormal;
   varying vec3 vWorldPosition;
   varying vec2 vUv;
 
+  float sampleHeight(vec2 sampleUv) {
+    return texture2D(heightMap, clamp(sampleUv, vec2(0.0), vec2(1.0))).r;
+  }
+
   void main() {
     vUv = uv;
-    float h = texture2D(heightMap, uv).r;
+    float h = sampleHeight(uv);
     vHeight = h;
+    vec2 texel = vec2(1.0 / 1025.0);
+    float hL = sampleHeight(uv - vec2(texel.x, 0.0));
+    float hR = sampleHeight(uv + vec2(texel.x, 0.0));
+    float hD = sampleHeight(uv - vec2(0.0, texel.y));
+    float hU = sampleHeight(uv + vec2(0.0, texel.y));
+    vec2 gradient = vec2(hR - hL, hU - hD) * heightScale;
+    vec3 localNormal = normalize(vec3(-gradient.x, -gradient.y, 0.72));
+    vWorldNormal = normalize(mat3(modelMatrix) * localNormal);
     vec3 displaced = position;
     displaced.z += h * heightScale + heightBias;
     vWorldPosition = (modelMatrix * vec4(displaced, 1.0)).xyz;
@@ -656,12 +692,14 @@ const terrainFragmentShader = `
   uniform sampler2D diagnosticMap;
   uniform sampler2D groundMap;
   uniform sampler2D heightMap;
+  uniform sampler2D waterMaskMap;
   uniform float diagnosticOpacity;
   uniform float groundStrength;
   uniform float heightScale;
   uniform int showGrid;
 
   varying float vHeight;
+  varying vec3 vWorldNormal;
   varying vec3 vWorldPosition;
   varying vec2 vUv;
 
@@ -701,6 +739,21 @@ const terrainFragmentShader = `
     return texture2D(heightMap, clamp(uv, vec2(0.0), vec2(1.0))).r;
   }
 
+  float hash(vec2 value) {
+    return fract(sin(dot(value, vec2(127.1, 311.7))) * 43758.5453);
+  }
+
+  float valueNoise(vec2 value) {
+    vec2 base = floor(value);
+    vec2 local = fract(value);
+    vec2 curve = local * local * (3.0 - 2.0 * local);
+    float a = hash(base);
+    float b = hash(base + vec2(1.0, 0.0));
+    float c = hash(base + vec2(0.0, 1.0));
+    float d = hash(base + vec2(1.0, 1.0));
+    return mix(mix(a, b, curve.x), mix(c, d, curve.x), curve.y);
+  }
+
   vec3 applyHeightShading(vec3 color, vec2 uv, float heightValue) {
     vec2 texel = vec2(1.0 / 1025.0);
     float hL = sampleHeight(uv - vec2(texel.x, 0.0));
@@ -719,6 +772,89 @@ const terrainFragmentShader = `
     color = mix(color, ink, slope * highland * 0.18);
     color += slope * highland * vec3(0.055, 0.045, 0.03);
     return color;
+  }
+
+  float smoothedWaterMask(vec2 uv) {
+    vec2 texel = vec2(1.0 / 1025.0);
+    float center = texture2D(waterMaskMap, uv).r;
+    float near = texture2D(waterMaskMap, uv + vec2(texel.x, 0.0)).r
+      + texture2D(waterMaskMap, uv - vec2(texel.x, 0.0)).r
+      + texture2D(waterMaskMap, uv + vec2(0.0, texel.y)).r
+      + texture2D(waterMaskMap, uv - vec2(0.0, texel.y)).r;
+    return (center * 2.0 + near) / 6.0;
+  }
+
+  vec3 applyInkEdge(vec3 color, vec2 uv, float heightValue, float cameraDistance) {
+    vec2 texel = vec2(1.0 / 1025.0);
+    float hL = sampleHeight(uv - vec2(texel.x * 2.5, 0.0));
+    float hR = sampleHeight(uv + vec2(texel.x * 2.5, 0.0));
+    float hD = sampleHeight(uv - vec2(0.0, texel.y * 2.5));
+    float hU = sampleHeight(uv + vec2(0.0, texel.y * 2.5));
+    float hNearL = sampleHeight(uv - vec2(texel.x, 0.0));
+    float hNearR = sampleHeight(uv + vec2(texel.x, 0.0));
+    float hNearD = sampleHeight(uv - vec2(0.0, texel.y));
+    float hNearU = sampleHeight(uv + vec2(0.0, texel.y));
+    vec2 wideGradient = vec2(hR - hL, hU - hD);
+    vec2 nearGradient = vec2(hNearR - hNearL, hNearU - hNearD);
+    float slope = clamp(length(wideGradient) * heightScale * 2.25, 0.0, 1.0);
+    float crease = clamp(abs(length(nearGradient) - length(wideGradient)) * heightScale * 7.5, 0.0, 1.0);
+    vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+    float ndv = abs(dot(normalize(vWorldNormal), viewDir));
+    float highland = smoothstep(0.22, 0.76, heightValue);
+    float mountainInk = smoothstep(0.34, 0.92, heightValue);
+    float viewContourCore = smoothstep(0.22, 0.045, ndv);
+    float viewContourWide = smoothstep(0.46, 0.10, ndv);
+    float viewContour = max(viewContourCore, viewContourWide * 0.42);
+    float ridge = smoothstep(0.18, 0.62, slope) * highland * viewContourWide;
+    float distanceFade = 1.0 - smoothstep(840.0, 1280.0, cameraDistance);
+
+    float edgeFine = max(
+      abs(sampleHeight(uv + vec2(texel.x * 1.5, 0.0)) - sampleHeight(uv - vec2(texel.x * 1.5, 0.0))),
+      abs(sampleHeight(uv + vec2(0.0, texel.y * 1.5)) - sampleHeight(uv - vec2(0.0, texel.y * 1.5)))
+    ) * heightScale;
+    float edgeMid = max(
+      abs(sampleHeight(uv + vec2(texel.x * 4.0, texel.y * 1.4)) - sampleHeight(uv - vec2(texel.x * 4.0, texel.y * 1.4))),
+      abs(sampleHeight(uv + vec2(texel.x * 1.4, -texel.y * 4.0)) - sampleHeight(uv - vec2(texel.x * 1.4, -texel.y * 4.0)))
+    ) * heightScale;
+    float edgeWide = max(
+      abs(sampleHeight(uv + vec2(texel.x * 8.0, 0.0)) - sampleHeight(uv - vec2(texel.x * 8.0, 0.0))),
+      abs(sampleHeight(uv + vec2(0.0, texel.y * 8.0)) - sampleHeight(uv - vec2(0.0, texel.y * 8.0)))
+    ) * heightScale;
+    float thickEdge = smoothstep(0.045, 0.22, edgeFine) * 0.36
+      + smoothstep(0.070, 0.30, edgeMid) * 0.40
+      + smoothstep(0.095, 0.38, edgeWide) * 0.24;
+    float brush = valueNoise(uv * 132.0 + vec2(heightValue * 25.0, -heightValue * 18.0));
+    float fiber = sin((uv.x * 180.0 + uv.y * 223.0 + heightValue * 24.0) * 6.28318) * 0.5 + 0.5;
+    float edgeFiber = mix(0.72, 1.04, fiber) * mix(0.84, 1.08, brush);
+    float inkBreakup = mix(0.76, 1.10, brush) * mix(0.74, 1.0, fiber);
+    float apparentEdge = viewContour * mix(0.35, 1.0, mountainInk) * mix(0.52, 1.10, slope) * edgeFiber;
+    float blackEdge = clamp(
+      apparentEdge * 1.18
+        + ridge * 0.28
+        + crease * viewContourWide * 0.10
+        + thickEdge * viewContourWide * mix(0.02, 0.16, mountainInk),
+      0.0,
+      1.0
+    );
+    float ink = clamp(
+      blackEdge,
+      0.0,
+      1.0
+    ) * distanceFade * inkBreakup;
+    float wash = viewContourWide * highland * distanceFade;
+    vec3 inkTone = vec3(0.0);
+    vec3 washed = mix(color, vec3(0.24, 0.24, 0.20), wash * 0.07);
+    float inkAlpha = clamp(ink * mix(0.32, 0.90, mountainInk), 0.0, 0.90);
+    return mix(washed, inkTone, inkAlpha);
+  }
+
+  vec3 applyLowlandMist(vec3 color, vec2 uv, float heightValue, float cameraDistance) {
+    float waterInfluence = smoothstep(0.02, 0.42, smoothedWaterMask(uv));
+    float lowland = smoothstep(0.32, 0.04, heightValue);
+    float distanceMist = smoothstep(260.0, 880.0, cameraDistance);
+    float mist = max(waterInfluence * 0.38, lowland * 0.20) * mix(0.78, 1.0, distanceMist);
+    vec3 mistColor = vec3(0.70, 0.74, 0.69);
+    return mix(color, mistColor, clamp(mist, 0.0, 0.42));
   }
 
   float terrainGridMask(vec2 uv) {
@@ -742,15 +878,17 @@ const terrainFragmentShader = `
     groundDetail = mix(groundDetail, groundFineDetail, fineWeight);
     float groundLuma = dot(groundDetail, vec3(0.299, 0.587, 0.114));
     vec3 groundTone = mix(vec3(groundLuma), groundDetail, 0.28);
-    vec3 detailMultiplier = mix(vec3(1.0), groundTone * 1.28, 0.34);
-    float detailWeight = groundStrength * mix(0.36, 0.68, fineWeight);
+    vec3 detailMultiplier = mix(vec3(1.0), groundTone * 1.22, 0.28);
+    float detailWeight = groundStrength * mix(0.30, 0.58, fineWeight);
     baseColor = mix(baseColor, baseColor * detailMultiplier, detailWeight);
-    baseColor += (groundLuma - 0.5) * groundStrength * 0.08;
+    baseColor += (groundLuma - 0.5) * groundStrength * 0.055;
 
     baseColor = applyHeightShading(baseColor, vUv, vHeight);
     float shade = mix(0.88, 1.05, smoothstep(0.08, 0.9, vHeight));
     vec3 fogTint = vec3(0.82, 0.86, 0.80);
     vec3 color = mix(baseColor * shade, fogTint, 0.05);
+    color = applyLowlandMist(color, vUv, vHeight, cameraDistance);
+    color = applyInkEdge(color, vUv, vHeight, cameraDistance);
     if (showGrid == 1) {
       float grid = terrainGridMask(vUv);
       color = mix(color, vec3(0.92, 0.96, 0.90), grid * 0.48);
@@ -821,6 +959,59 @@ function WaterSurface({
   );
 }
 
+function MistSurface({
+  heightBias,
+  heightScale,
+  heightUrl,
+  seaLevel,
+  waterMaskUrl
+}: {
+  heightBias: number;
+  heightScale: number;
+  heightUrl: string;
+  seaLevel: number;
+  waterMaskUrl: string;
+}) {
+  const materialRef = useRef<THREE.ShaderMaterial | null>(null);
+  const [heightTexture, waterMaskTexture] = useLoader(THREE.TextureLoader, [heightUrl, waterMaskUrl]);
+  const mistHeight = seaLevel + heightBias + Math.max(2.8, heightScale * 0.34);
+
+  useEffect(() => {
+    configureHeightTexture(heightTexture);
+    configureHeightTexture(waterMaskTexture);
+  }, [heightTexture, waterMaskTexture]);
+
+  const uniforms = useMemo(
+    () => ({
+      heightMap: { value: heightTexture },
+      time: { value: 0 },
+      waterMaskMap: { value: waterMaskTexture }
+    }),
+    [heightTexture, waterMaskTexture]
+  );
+
+  useFrame((state) => {
+    if (materialRef.current) {
+      materialRef.current.uniforms.time.value = state.clock.elapsedTime;
+    }
+  });
+
+  return (
+    <mesh position={[0, mistHeight, 0]} renderOrder={4} rotation={[-Math.PI / 2, 0, 0]}>
+      <planeGeometry args={[terrainSize * 1.015, terrainSize * 1.015, 1, 1]} />
+      <shaderMaterial
+        ref={materialRef}
+        depthTest
+        depthWrite={false}
+        fragmentShader={mistFragmentShader}
+        transparent
+        uniforms={uniforms}
+        vertexShader={mistVertexShader}
+      />
+    </mesh>
+  );
+}
+
 const waterVertexShader = `
   varying vec2 vUv;
 
@@ -860,21 +1051,103 @@ const waterFragmentShader = `
       discard;
     }
 
-    vec2 tiledUv = vUv * waterRepeat * 0.42;
-    vec2 flow = vec2(time * waterSpeed * 0.055, time * waterSpeed * 0.038);
+    vec2 tiledUv = vUv * waterRepeat * 0.34;
+    vec2 flow = vec2(time * waterSpeed * 0.040, time * waterSpeed * 0.028);
     float waveA = sin((tiledUv.x * 0.72 + tiledUv.y * 0.18 + flow.x) * 6.28318);
     float waveB = sin((tiledUv.y * 0.52 - tiledUv.x * 0.22 + flow.y) * 6.28318);
     float waveC = sin((tiledUv.x * 1.4 - tiledUv.y * 0.85 + time * waterSpeed * 0.045) * 6.28318);
     float shine = smoothstep(-0.15, 1.05, waveA * 0.42 + waveB * 0.32 + waveC * 0.18);
-    vec3 deep = vec3(0.028, 0.18, 0.28);
-    vec3 shallow = vec3(0.09, 0.36, 0.45);
-    vec3 highlight = vec3(0.34, 0.60, 0.62);
+    vec3 deep = vec3(0.055, 0.15, 0.21);
+    vec3 shallow = vec3(0.12, 0.29, 0.34);
+    vec3 highlight = vec3(0.42, 0.54, 0.52);
     float wave = smoothstep(0.34, 0.96, shine);
     vec3 color = mix(deep, shallow, wave);
-    color = mix(color, highlight, wave * 0.11);
-    float alpha = waterOpacity * waterMask * mix(0.50, 0.78, wave);
+    color = mix(color, highlight, wave * 0.075);
+    float alpha = waterOpacity * waterMask * mix(0.42, 0.68, wave);
 
     gl_FragColor = vec4(color, alpha);
+  }
+`;
+
+const mistVertexShader = `
+  varying vec2 vUv;
+  varying vec3 vWorldPosition;
+
+  void main() {
+    vUv = uv;
+    vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const mistFragmentShader = `
+  uniform sampler2D heightMap;
+  uniform sampler2D waterMaskMap;
+  uniform float time;
+
+  varying vec2 vUv;
+  varying vec3 vWorldPosition;
+
+  float sampleHeight(vec2 uv) {
+    return texture2D(heightMap, clamp(uv, vec2(0.0), vec2(1.0))).r;
+  }
+
+  float smoothedWaterMask(vec2 uv) {
+    vec2 texel = vec2(1.0 / 1025.0);
+    float center = texture2D(waterMaskMap, uv).r;
+    float near = texture2D(waterMaskMap, uv + vec2(texel.x, 0.0)).r
+      + texture2D(waterMaskMap, uv - vec2(texel.x, 0.0)).r
+      + texture2D(waterMaskMap, uv + vec2(0.0, texel.y)).r
+      + texture2D(waterMaskMap, uv - vec2(0.0, texel.y)).r;
+    float far = texture2D(waterMaskMap, uv + vec2(texel.x, texel.y) * 3.0).r
+      + texture2D(waterMaskMap, uv + vec2(-texel.x, texel.y) * 3.0).r
+      + texture2D(waterMaskMap, uv + vec2(texel.x, -texel.y) * 3.0).r
+      + texture2D(waterMaskMap, uv + vec2(-texel.x, -texel.y) * 3.0).r;
+    return (center * 3.0 + near * 1.35 + far * 0.72) / 11.28;
+  }
+
+  float hash(vec2 value) {
+    return fract(sin(dot(value, vec2(127.1, 311.7))) * 43758.5453);
+  }
+
+  float valueNoise(vec2 value) {
+    vec2 base = floor(value);
+    vec2 local = fract(value);
+    vec2 curve = local * local * (3.0 - 2.0 * local);
+    float a = hash(base);
+    float b = hash(base + vec2(1.0, 0.0));
+    float c = hash(base + vec2(0.0, 1.0));
+    float d = hash(base + vec2(1.0, 1.0));
+    return mix(mix(a, b, curve.x), mix(c, d, curve.x), curve.y);
+  }
+
+  void main() {
+    float heightValue = sampleHeight(vUv);
+    float waterValue = smoothedWaterMask(vUv);
+    float waterMist = smoothstep(0.025, 0.34, waterValue);
+    float lowlandMist = smoothstep(0.38, 0.10, heightValue);
+
+    vec2 wind = vec2(time * 0.038, -time * 0.021);
+    vec2 crossWind = vec2(-time * 0.017, time * 0.029);
+    float broadNoiseA = valueNoise(vUv * 13.0 + wind);
+    float broadNoiseB = valueNoise(vUv * 21.0 + crossWind + vec2(19.2, -7.4));
+    float fineNoise = valueNoise(vUv * 58.0 - wind * 1.7);
+    float filament = sin((vUv.x * 38.0 + vUv.y * 52.0 + time * 0.34) * 6.28318) * 0.5 + 0.5;
+    float cloudBody = broadNoiseA * 0.52 + broadNoiseB * 0.36 + fineNoise * 0.12;
+    float cloudEdge = smoothstep(0.34, 0.78, cloudBody + filament * 0.10);
+    float evaporate = smoothstep(0.14, 0.64, valueNoise(vUv * 33.0 + vec2(time * 0.055, time * 0.018)));
+    float veil = cloudEdge * mix(0.45, 1.0, evaporate);
+
+    float cameraDistance = distance(cameraPosition, vWorldPosition);
+    float nearDissolve = smoothstep(260.0, 620.0, cameraDistance);
+    float farFade = 1.0 - smoothstep(1120.0, 1620.0, cameraDistance);
+    float mist = (waterMist * 0.36 + lowlandMist * 0.24) * veil * nearDissolve * farFade;
+    if (mist <= 0.015) {
+      discard;
+    }
+
+    vec3 mistColor = mix(vec3(0.78, 0.81, 0.75), vec3(0.64, 0.69, 0.63), waterMist * 0.45);
+    gl_FragColor = vec4(mistColor, clamp(mist, 0.0, 0.46));
   }
 `;
 
