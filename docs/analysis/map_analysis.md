@@ -114,6 +114,15 @@ byte 12..13 未知，active record 中目前为 0
 
 `OBJS0004` 按 group/type 画出的散点图形成地图形状，因此很可能是地图对象摆放表。group/type 名称还需要和 exe 字符串继续关联，例如 `shadow*_castle`、`stable`、`blacksmith`、树木和设施名等。
 
+IDA 线索补充：
+
+- `san11pk_dump.exe.idb` 中可提取 82 个 `shadowNN_*` 字符串，覆盖城、关、港、市场、农场、锻造、马厩、树木等对象影子名。
+- `OBJS0004` active record 的 `object_type` 有 178 个不同值，其中 74 个能按 `object_type == shadowNN` 匹配到 shadow 名称候选。
+- 候选映射见 `extractor/ida/data/resource_hints/objs_shadow_candidates.csv`。这仍需用散点图验证，暂不能直接把 `byte 7` 定名为 `shadow_id`。
+- 运行时 `struc_map_grid` 是 5 个 4-byte 字段，总大小 20 bytes；`SHEX0008` 是每格 11 bytes，因此不是运行时格子的直接 dump。
+- `struct_map_grid_ARRAY`、`GetFacilityIDFromMapGridData`、`GetFacilityPtrFromCoordinate`、`GetAdjacentCoordinateInDirection` 等 IDA 符号已整理到 `extractor/ida/data/resource_hints/map_grid_related_symbols.csv`。
+- 详细结论见 `docs/analysis/ida_resource_hints.md` 和 `extractor/ida/data/resource_hints/map_grid_shex_notes.md`。
+
 `analyze_map_candidates.py` 输出：
 
 - `map_candidates.csv/json`：每个 block 的 signature、offset、size、hash、entropy、检测结构和生成输出

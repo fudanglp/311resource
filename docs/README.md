@@ -12,6 +12,7 @@
 - `analysis/aimg_analysis.md`：`AIMG0001` 图集/精灵元数据、slot/record 结构和 overlay 观察。
 - `analysis/map_analysis.md`：`SHEX0008`、`GCOL0001`、`K3ST0006`、`OBJS0004` 地图资源簇、200x200 格子和半格错位坐标。
 - `analysis/recognized_formats_analysis.md`：`KOVS*`、`FCVD0022`、`KSEF0131`、`TOD20053`、`NUNO0220` 等已识别但仍需继续逆向的格式。
+- `analysis/ida_resource_hints.md`：从 `san11pk_dump.exe.idb` 导出的函数、结构体、shadow 名称、地图格子和人物/特技 catalog 线索。
 
 ## 本地原始文件
 
@@ -43,6 +44,7 @@ bebdf98d8c2efe16efe6d1f4a342a6e8249a5282  game/San11WPK/media/san11res1.bin
 | `NUNO0220` | `structurally parsed` | `analysis/recognized_formats_analysis.md` |
 | `KOVS*` | `recognized only` | `analysis/recognized_formats_analysis.md` |
 | 25 字节 `0/1` 小表 | `guess` | `analysis/resource_bin_analysis.md` |
+| IDA resource hints | `supporting evidence` | `analysis/ida_resource_hints.md` |
 
 ## 文档约定
 

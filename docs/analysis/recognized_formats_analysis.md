@@ -23,6 +23,16 @@ TOD20053    38 blocks,   38 exact count*16 matches
 NUNO0220     8 blocks,    8 exact count*16 matches
 ```
 
+## IDA 线索现状
+
+`san11pk_dump.exe.idb` 已通过 `python-idb` 导出函数名、命名地址、结构体和结构成员，并进一步生成 `extractor/ida/data/resource_hints/`。当前结论是：
+
+- 函数名、命名地址和结构体表中没有直接命中 `KOVS`、`FCVD0022`、`KSEF0131`、`TOD20053`、`SHEX0008`、`GCOL0001`、`K3ST0006`、`OBJS0004`、`AIMG0001`。
+- 直接扫描 IDB 字符串时，`NUNO0220` 和 `CDEF0120` 有命中，但上下文更像资源字符串或标签，还不足以解释字段布局。
+- `WFTX0010` 和 `WKMD0010` 有命中，但这两个格式已有 parser，当前收益有限。
+
+因此，下面这些格式的字段语义暂时不能靠现有 IDA CSV 直接解决。下一步若要继续利用 IDA，需要导出字符串引用、函数 xref、反汇编或伪代码上下文。更完整说明见 `analysis/ida_resource_hints.md`。
+
 ## FCVD0022
 
 当前结构：
