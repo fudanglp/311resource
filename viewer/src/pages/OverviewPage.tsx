@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Images, Map, Mountain } from "lucide-react";
+import { ArrowRight, Cuboid, Images, Layers, Map, Mountain } from "lucide-react";
 import type React from "react";
 import { DataState } from "../components/DataState";
 import { Stat } from "../components/Stat";
@@ -43,7 +43,7 @@ export function OverviewPage() {
             <PanelTitle>内容入口</PanelTitle>
             <PanelDescription>按游戏对象组织，不按提取目录组织。</PanelDescription>
           </PanelHeader>
-          <PanelContent className="grid gap-3 md:grid-cols-3">
+          <PanelContent className="grid gap-3 md:grid-cols-3 xl:grid-cols-5">
             <ContentLink
               icon={<Map className="h-4 w-4" />}
               title="世界地图"
@@ -58,9 +58,21 @@ export function OverviewPage() {
             />
             <ContentLink
               icon={<Images className="h-4 w-4" />}
-              title="资产库"
-              detail="头像、WFTX 贴图、模型、AIMG 覆盖"
+              title="图像资产"
+              detail="头像、WFTX 贴图和贴图分组"
               to="/assets"
+            />
+            <ContentLink
+              icon={<Cuboid className="h-4 w-4" />}
+              title="3D 模型"
+              detail="WKMD/GLB 预览、贴图状态、复杂度筛选"
+              to="/models"
+            />
+            <ContentLink
+              icon={<Layers className="h-4 w-4" />}
+              title="AIMG 覆盖"
+              detail="overlay 样本、entry/group/frame 分布"
+              to="/aimg"
             />
           </PanelContent>
         </Panel>
@@ -113,7 +125,7 @@ function ContentLink({
   detail: string;
   icon: React.ReactNode;
   title: string;
-  to: "/" | "/map" | "/map/objects" | "/assets";
+  to: "/" | "/map" | "/map/objects" | "/assets" | "/models" | "/aimg";
 }) {
   return (
     <div className="rounded-lg border bg-background p-4">

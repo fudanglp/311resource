@@ -25,7 +25,7 @@ uv run san11res list-modules
 ```text
 san11resource.resource/    LINK bin、WFTX、覆盖率分析
 san11resource.face/        FCE 人脸包导出
-san11resource.model/       WKMD 模型导出
+san11resource.model/       WKMD 模型导出（OBJ/GLB）
 san11resource.aimg/        AIMG 图集/精灵元数据
 san11resource.map/         SHEX/GCOL/K3ST/OBJS 地图资源分析
 san11resource.recognized/  KOVS/FCVD/KSEF/TOD/NUNO 等已识别格式继续逆向
@@ -75,6 +75,14 @@ uv run python -m san11resource.ida.export_python_idb
 ```
 
 默认读取本地 `ida/input/*.idb`，输出到 `ida/data/python_idb/`。这两个目录中的 IDB 和导出数据只用于本地分析，不进 git。
+
+WKMD 模型导出默认同时写出：
+
+- `*/obj/*.obj`：文本调试格式。
+- `*/glb/*.glb`：WebGL/viewer 优先使用的 glTF binary。
+- `*/meta/*.json`：WKMD 表、part、transform、skin weight 等辅助分析信息。
+
+如只需要旧的 OBJ 输出，可以追加 `--no-glb`。
 
 从 IDA 导出数据和本地提取结果生成资源解析线索：
 

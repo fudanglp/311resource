@@ -4,7 +4,7 @@ Experimental WKMD0010 model extractor for San11 WPK resources.
 
 This script focuses on the LINK entries that start with `WKMD0010`. The WKMD
 format is not fully mapped yet, but the common mesh payload has enough structure
-to export a useful OBJ preview:
+to export useful OBJ and GLB previews:
 
 - WKMD header starts with `WKMD0010`
 - 0x08 uint32 declared block size
@@ -62,6 +62,7 @@ class WkmdRecord:
     bbox_max_y: float
     bbox_max_z: float
     obj: str
+    glb: str
     mtl: str
     texture_entry: int
     texture: str
@@ -500,6 +501,182 @@ def write_mtl(path: Path, texture_path: Path) -> None:
         file.write(f"map_Kd {as_obj_path(rel_texture)}\n")
 
 
+def pad4(data: bytes | bytearray, pad_byte: bytes = b"\x00") -> bytes:
+    padding = (-len(data)) % 4
+    if padding == 0:
+        return bytes(data)
+    return bytes(data) + pad_byte * padding
+
+
+def mime_type_for_image(path: Path) -> str:
+    suffix = path.suffix.lower()
+    if suffix in {".jpg", ".jpeg"}:
+        return "image/jpeg"
+    return "image/png"
+
+
+def flatten_floats(values: list[tuple[float, ...]]) -> bytes:
+    if not values:
+        return b""
+    width = len(values[0])
+    return struct.pack("<" + "f" * (len(values) * width), *(component for row in values for component in row))
+
+
+def write_glb(
+    path: Path,
+    vertices: list[tuple[float, float, float]],
+    normals: list[tuple[float, float, float]],
+    uvs: list[tuple[float, float]],
+    triangle_groups: list[tuple[str, list[tuple[int, int, int]]]],
+    *,
+    texture_path: Path | None = None,
+) -> None:
+    ensure_dir(path.parent)
+
+    binary = bytearray()
+    buffer_views: list[dict] = []
+    accessors: list[dict] = []
+
+    def add_buffer_view(payload: bytes, *, target: int | None = None) -> int:
+        nonlocal binary
+        binary = bytearray(pad4(binary))
+        byte_offset = len(binary)
+        binary.extend(payload)
+        buffer_view: dict[str, int] = {
+            "buffer": 0,
+            "byteOffset": byte_offset,
+            "byteLength": len(payload),
+        }
+        if target is not None:
+            buffer_view["target"] = target
+        buffer_views.append(buffer_view)
+        return len(buffer_views) - 1
+
+    position_payload = flatten_floats(vertices)
+    normal_payload = flatten_floats(normals)
+    uv_payload = flatten_floats(uvs)
+    position_view = add_buffer_view(position_payload, target=34962)
+    normal_view = add_buffer_view(normal_payload, target=34962)
+    uv_view = add_buffer_view(uv_payload, target=34962)
+
+    xs = [vertex[0] for vertex in vertices] or [0.0]
+    ys = [vertex[1] for vertex in vertices] or [0.0]
+    zs = [vertex[2] for vertex in vertices] or [0.0]
+    position_accessor = len(accessors)
+    accessors.append(
+        {
+            "bufferView": position_view,
+            "componentType": 5126,
+            "count": len(vertices),
+            "type": "VEC3",
+            "min": [min(xs), min(ys), min(zs)],
+            "max": [max(xs), max(ys), max(zs)],
+        }
+    )
+    normal_accessor = len(accessors)
+    accessors.append(
+        {
+            "bufferView": normal_view,
+            "componentType": 5126,
+            "count": len(normals),
+            "type": "VEC3",
+        }
+    )
+    uv_accessor = len(accessors)
+    accessors.append(
+        {
+            "bufferView": uv_view,
+            "componentType": 5126,
+            "count": len(uvs),
+            "type": "VEC2",
+        }
+    )
+
+    index_component_type = 5123 if len(vertices) <= 0xFFFF else 5125
+    index_format = "H" if index_component_type == 5123 else "I"
+    primitives = []
+    for group_name, triangles in triangle_groups:
+        flat_indices = [index for triangle in triangles for index in triangle]
+        index_payload = struct.pack("<" + index_format * len(flat_indices), *flat_indices) if flat_indices else b""
+        index_view = add_buffer_view(index_payload, target=34963)
+        index_accessor = len(accessors)
+        accessors.append(
+            {
+                "bufferView": index_view,
+                "componentType": index_component_type,
+                "count": len(flat_indices),
+                "type": "SCALAR",
+            }
+        )
+        primitive: dict[str, object] = {
+            "attributes": {
+                "POSITION": position_accessor,
+                "NORMAL": normal_accessor,
+                "TEXCOORD_0": uv_accessor,
+            },
+            "indices": index_accessor,
+            "mode": 4,
+            "material": 0,
+            "extras": {"name": group_name},
+        }
+        primitives.append(primitive)
+
+    materials: list[dict] = [
+        {
+            "name": "san11_material",
+            "pbrMetallicRoughness": {
+                "baseColorFactor": [0.8, 0.8, 0.8, 1.0],
+                "metallicFactor": 0.0,
+                "roughnessFactor": 0.85,
+            },
+            "doubleSided": True,
+        }
+    ]
+    images: list[dict] = []
+    textures: list[dict] = []
+    samplers: list[dict] = []
+    if texture_path is not None and texture_path.is_file():
+        image_payload = texture_path.read_bytes()
+        image_view = add_buffer_view(image_payload)
+        images.append(
+            {
+                "bufferView": image_view,
+                "mimeType": mime_type_for_image(texture_path),
+                "name": texture_path.stem,
+            }
+        )
+        samplers.append({"magFilter": 9729, "minFilter": 9987, "wrapS": 10497, "wrapT": 10497})
+        textures.append({"sampler": 0, "source": 0})
+        materials[0]["pbrMetallicRoughness"]["baseColorTexture"] = {"index": 0}
+
+    binary = bytearray(pad4(binary))
+    gltf: dict[str, object] = {
+        "asset": {"version": "2.0", "generator": "san11resource.model.export_wkmd"},
+        "scene": 0,
+        "scenes": [{"nodes": [0]}],
+        "nodes": [{"mesh": 0, "name": path.stem}],
+        "meshes": [{"name": path.stem, "primitives": primitives}],
+        "materials": materials,
+        "buffers": [{"byteLength": len(binary)}],
+        "bufferViews": buffer_views,
+        "accessors": accessors,
+    }
+    if images:
+        gltf["images"] = images
+        gltf["textures"] = textures
+        gltf["samplers"] = samplers
+
+    json_chunk = pad4(json.dumps(gltf, ensure_ascii=False, separators=(",", ":")).encode("utf-8"), b" ")
+    bin_chunk = bytes(binary)
+    total_length = 12 + 8 + len(json_chunk) + 8 + len(bin_chunk)
+    with path.open("wb") as file:
+        file.write(struct.pack("<III", 0x46546C67, 2, total_length))
+        file.write(struct.pack("<I4s", len(json_chunk), b"JSON"))
+        file.write(json_chunk)
+        file.write(struct.pack("<I4s", len(bin_chunk), b"BIN\x00"))
+        file.write(bin_chunk)
+
+
 def export_entry(
     source: Path,
     data: bytes,
@@ -508,6 +685,7 @@ def export_entry(
     output_root: Path,
     *,
     flip_v: bool,
+    export_glb: bool,
     texture: TextureExport | None = None,
 ) -> WkmdRecord:
     meta = parse_wkmd(data)
@@ -524,6 +702,7 @@ def export_entry(
     base_name = f"entry_{entry:05d}_{offset:08x}"
     raw_path = output_root / stem / "wkmd" / f"{base_name}.wkmd"
     obj_path = output_root / stem / "obj" / f"{base_name}.obj"
+    glb_path = output_root / stem / "glb" / f"{base_name}.glb"
     mtl_path = output_root / stem / "mtl" / f"{base_name}.mtl" if texture is not None else None
     meta_path = output_root / stem / "meta" / f"{base_name}.json"
 
@@ -532,6 +711,15 @@ def export_entry(
     if texture is not None and mtl_path is not None:
         write_mtl(mtl_path, texture.path)
     write_obj(obj_path, vertices, normals, uvs, triangle_groups, mtl_path=mtl_path)
+    if export_glb:
+        write_glb(
+            glb_path,
+            vertices,
+            normals,
+            uvs,
+            triangle_groups,
+            texture_path=texture.path if texture is not None else None,
+        )
     ensure_dir(meta_path.parent)
     meta_path.write_text(
         json.dumps(
@@ -562,6 +750,7 @@ def export_entry(
                 ],
                 "texture_entry": texture.entry if texture is not None else -1,
                 "texture": str(texture.path.relative_to(output_root)) if texture is not None else "",
+                "glb": str(glb_path.relative_to(output_root)) if export_glb else "",
             },
             ensure_ascii=False,
             indent=2,
@@ -593,6 +782,7 @@ def export_entry(
         bbox_max_y=bbox[4],
         bbox_max_z=bbox[5],
         obj=str(obj_path.relative_to(output_root)),
+        glb=str(glb_path.relative_to(output_root)) if export_glb else "",
         mtl=str(mtl_path.relative_to(output_root)) if mtl_path is not None else "",
         texture_entry=texture.entry if texture is not None else -1,
         texture=str(texture.path.relative_to(output_root)) if texture is not None else "",
@@ -607,6 +797,7 @@ def export_link_wkmd(
     *,
     entries_filter: set[int] | None,
     flip_v: bool,
+    export_glb: bool,
     auto_texture_previous: bool,
     texture_entry: int | None,
     texture_layer: int,
@@ -670,6 +861,7 @@ def export_link_wkmd(
                             offset,
                             output_root,
                             flip_v=flip_v,
+                            export_glb=export_glb,
                             texture=texture_for_entry(buf, entries, entry),
                         )
                     )
@@ -708,7 +900,7 @@ def parse_entry_filter(values: list[str] | None) -> set[int] | None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Experimental WKMD0010 to OBJ exporter")
+    parser = argparse.ArgumentParser(description="Experimental WKMD0010 to OBJ/GLB exporter")
     parser.add_argument(
         "input",
         nargs="?",
@@ -742,6 +934,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=0,
         help="WFTX layer index to export when binding a multi-layer texture",
     )
+    parser.add_argument(
+        "--no-glb",
+        action="store_true",
+        help="Do not write GLB files alongside OBJ files",
+    )
     return parser
 
 
@@ -758,6 +955,7 @@ def main() -> int:
         output_root,
         entries_filter=parse_entry_filter(args.entry),
         flip_v=not args.no_flip_v,
+        export_glb=not args.no_glb,
         auto_texture_previous=not args.no_auto_texture,
         texture_entry=args.texture_entry,
         texture_layer=args.texture_layer,
@@ -769,7 +967,7 @@ def main() -> int:
         print(
             f"  entry {record.entry}: vertices={record.vertex_count}, "
             f"indices={record.index_count}, triangles={record.triangle_count}, "
-            f"texture_entry={record.texture_entry}, obj={record.obj}"
+            f"texture_entry={record.texture_entry}, obj={record.obj}, glb={record.glb}"
         )
     if len(records) > 20:
         print(f"  ... {len(records) - 20} more")

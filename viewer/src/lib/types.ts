@@ -115,6 +115,8 @@ export type ModelRecord = {
   bbox_max_y: number;
   bbox_max_z: number;
   obj: string;
+  glb: string;
+  texture_entry: number;
   texture: string;
   note: string;
 };

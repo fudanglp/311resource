@@ -1,4 +1,4 @@
-import { Boxes, Image, Layers, UserSquare2 } from "lucide-react";
+import { Image, UserSquare2 } from "lucide-react";
 import type React from "react";
 import { useMemo, useState } from "react";
 import { DataState } from "../components/DataState";
@@ -9,66 +9,44 @@ import { Button } from "../components/ui/button";
 import { Panel, PanelContent, PanelDescription, PanelHeader, PanelTitle } from "../components/ui/panel";
 import { Select } from "../components/ui/select";
 import { repoFile, useRepoJson } from "../lib/data-client";
-import type { AimgRecord, FaceRecord, ModelRecord, WftxImageRecord } from "../lib/types";
+import type { FaceRecord, WftxImageRecord } from "../lib/types";
 import { cn, formatNumber, shortSource } from "../lib/utils";
 
-type AssetMode = "faces" | "textures" | "models" | "aimg";
-
-const aimgOverlaySamples = [
-  "extracted/aimg/overlays/aimg_02196_on_2189.png",
-  "extracted/aimg/overlays/aimg_02197_on_2193.png",
-  "extracted/aimg/overlays/aimg_02198_on_2195_layer02_03_h.png",
-  "extracted/aimg/overlays/aimg_02200_on_2195_layer06_07_h.png",
-  "extracted/aimg/overlays/aimg_02204_on_2193_2194_h.png",
-  "extracted/aimg/overlays/aimg_02205_on_2195_layer00_01_h.png"
-];
+type AssetMode = "faces" | "textures";
 
 export function AssetsPage() {
   const faces = useRepoJson<FaceRecord[]>("extracted/manifests/face_manifest.json");
   const textures = useRepoJson<WftxImageRecord[]>("extracted/manifests/resource_wftx_images.json");
-  const pkModels = useRepoJson<ModelRecord[]>("extracted/manifests/model_wkmd_pkres.json");
-  const res1Models = useRepoJson<ModelRecord[]>("extracted/manifests/model_wkmd_res1.json");
-  const aimg = useRepoJson<AimgRecord[]>("extracted/manifests/aimg_records.json");
   const [mode, setMode] = useState<AssetMode>("faces");
-
-  const models = useMemo(() => [...(pkModels.data ?? []), ...(res1Models.data ?? [])], [pkModels.data, res1Models.data]);
-  const assetError = faces.error ?? textures.error ?? pkModels.error ?? res1Models.error ?? aimg.error;
-  const assetLoading = faces.isLoading || textures.isLoading || pkModels.isLoading || res1Models.isLoading || aimg.isLoading;
 
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="workbench-title">资产库</h1>
-        <p className="workbench-subtitle">按游戏内容浏览头像、贴图、模型和地图覆盖层，不直接访问原始资源包。</p>
+        <h1 className="workbench-title">图像资产</h1>
+        <p className="workbench-subtitle">浏览头像和 WFTX 贴图；3D 模型和 AIMG 覆盖层已拆到独立页面。</p>
       </div>
 
-      <DataState error={assetError} isLoading={assetLoading} label="资产索引" />
+      <DataState error={faces.error ?? textures.error} isLoading={faces.isLoading || textures.isLoading} label="图像资产索引" />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Stat label="头像" value={faces.data?.length} detail="FCE 输出图像" />
         <Stat label="WFTX 图像" value={textures.data?.length} detail="资源包贴图" />
-        <Stat label="WKMD 模型" value={models.length} detail="OBJ 可视化候选" />
-        <Stat label="AIMG 记录" value={aimg.data?.length} detail="地图覆盖坐标" />
       </div>
 
       <Panel>
         <PanelHeader className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <PanelTitle>内容类型</PanelTitle>
-            <PanelDescription>头像、贴图、模型和地图覆盖层。</PanelDescription>
+            <PanelDescription>头像和 WFTX 贴图。</PanelDescription>
           </div>
           <div className="flex flex-wrap gap-2">
             <ModeButton icon={<UserSquare2 className="h-4 w-4" />} label="头像" mode="faces" active={mode} setMode={setMode} />
             <ModeButton icon={<Image className="h-4 w-4" />} label="贴图" mode="textures" active={mode} setMode={setMode} />
-            <ModeButton icon={<Boxes className="h-4 w-4" />} label="模型" mode="models" active={mode} setMode={setMode} />
-            <ModeButton icon={<Layers className="h-4 w-4" />} label="AIMG" mode="aimg" active={mode} setMode={setMode} />
           </div>
         </PanelHeader>
         <PanelContent>
           {mode === "faces" ? <FacesView faces={faces.data ?? []} /> : null}
           {mode === "textures" ? <TexturesView textures={textures.data ?? []} /> : null}
-          {mode === "models" ? <ModelsView models={models} /> : null}
-          {mode === "aimg" ? <AimgView records={aimg.data ?? []} /> : null}
         </PanelContent>
       </Panel>
     </div>
@@ -130,6 +108,7 @@ function FacesView({ faces }: { faces: FaceRecord[] }) {
               onChange={(event) => {
                 setPageSize(Number(event.target.value));
                 setPage(0);
+                setSelectedIndex(0);
               }}
             >
               <option value="40">40 / page</option>
@@ -184,7 +163,7 @@ function FacesView({ faces }: { faces: FaceRecord[] }) {
           ))}
         </div>
       </div>
-      <AssetImageAside
+      <ImageDetailAside
         title="头像"
         image={selectedImage}
         imageIndex={safeSelectedIndex}
@@ -306,7 +285,10 @@ function TexturesView({ textures }: { textures: WftxImageRecord[] }) {
                   <tr
                     key={group.id}
                     className={group.id === selectedGroup?.id ? "bg-accent" : "cursor-pointer hover:bg-accent/60"}
-                    onClick={() => setSelectedGroupId(group.id)}
+                    onClick={() => {
+                      setSelectedGroupId(group.id);
+                      setSelectedSampleIndex(0);
+                    }}
                   >
                     <td className="mono-cell">{group.source}</td>
                     <td className="mono-cell">
@@ -360,7 +342,7 @@ function TexturesView({ textures }: { textures: WftxImageRecord[] }) {
           </div>
         </div>
       </div>
-      <AssetImageAside
+      <ImageDetailAside
         title="WFTX 贴图"
         image={selectedTextureImage}
         imageIndex={safeSelectedSampleIndex}
@@ -383,102 +365,7 @@ function TexturesView({ textures }: { textures: WftxImageRecord[] }) {
   );
 }
 
-function ModelsView({ models }: { models: ModelRecord[] }) {
-  return (
-    <div className="max-h-[650px] overflow-auto rounded-md border">
-      <table className="table-dense">
-        <thead>
-          <tr>
-            <th>entry</th>
-            <th>source</th>
-            <th>vertices</th>
-            <th>triangles</th>
-            <th>bbox</th>
-            <th>obj</th>
-          </tr>
-        </thead>
-        <tbody>
-          {models.slice(0, 300).map((model) => (
-            <tr key={`${model.source}-${model.entry}`}>
-              <td className="mono-cell">{model.entry}</td>
-              <td className="mono-cell">{shortSource(model.source)}</td>
-              <td>{formatNumber(model.vertex_count)}</td>
-              <td>{formatNumber(model.triangle_count)}</td>
-              <td className="mono-cell">
-                {model.bbox_min_x.toFixed(1)},{model.bbox_min_y.toFixed(1)},{model.bbox_min_z.toFixed(1)}
-                {" -> "}
-                {model.bbox_max_x.toFixed(1)},{model.bbox_max_y.toFixed(1)},{model.bbox_max_z.toFixed(1)}
-              </td>
-              <td className="mono-cell">{model.obj}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function AimgView({ records }: { records: AimgRecord[] }) {
-  const entries = new Set(records.map((record) => record.entry));
-  const groups = new Set(records.map((record) => record.group));
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const lightboxImages = useMemo<LightboxImage[]>(
-    () =>
-      aimgOverlaySamples.map((path) => ({
-        src: repoFile(path),
-        title: path.split("/").pop() ?? path,
-        detail: path
-      })),
-    []
-  );
-  const selectedImage = lightboxImages[selectedIndex] ?? null;
-
-  return (
-    <div className="grid gap-4 xl:grid-cols-[1fr_320px]">
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-        {aimgOverlaySamples.map((path, index) => (
-          <button
-            key={path}
-            type="button"
-            className={cn(
-              "overflow-hidden rounded-md border bg-background text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              index === selectedIndex && "border-primary ring-1 ring-primary"
-            )}
-            onClick={() => setSelectedIndex(index)}
-          >
-            <div className="flex aspect-[4/3] w-full items-center justify-center bg-muted/40 p-2">
-              <img src={lightboxImages[index].src} alt={path.split("/").pop()} className="max-h-full max-w-full object-contain" loading="lazy" />
-            </div>
-            <figcaption className="truncate border-t px-2 py-1 font-mono text-[11px] text-muted-foreground">
-              {path.split("/").pop()}
-            </figcaption>
-          </button>
-        ))}
-      </div>
-      <AssetImageAside
-        title="AIMG 覆盖"
-        image={selectedImage}
-        imageIndex={selectedIndex}
-        imageCount={lightboxImages.length}
-        onOpen={() => setLightboxIndex(selectedIndex)}
-        lines={[
-          `${formatNumber(records.length)} records`,
-          `${formatNumber(entries.size)} entries`,
-          `${formatNumber(groups.size)} groups`
-        ]}
-      />
-      <ImageLightbox
-        images={lightboxImages}
-        index={lightboxIndex}
-        onClose={() => setLightboxIndex(null)}
-        onIndexChange={setLightboxIndex}
-      />
-    </div>
-  );
-}
-
-function AssetImageAside({
+function ImageDetailAside({
   image,
   imageCount,
   imageIndex,

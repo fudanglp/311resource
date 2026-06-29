@@ -19,16 +19,17 @@ export function ImageLightbox({
   onClose: () => void;
   onIndexChange: (index: number) => void;
 }) {
-  if (index === null || images.length === 0) {
-    return null;
-  }
-
-  const safeIndex = Math.min(Math.max(index, 0), images.length - 1);
+  const isOpen = index !== null && images.length > 0;
+  const safeIndex = isOpen ? Math.min(Math.max(index, 0), images.length - 1) : 0;
   const image = images[safeIndex];
   const hasPrevious = safeIndex > 0;
   const hasNext = safeIndex < images.length - 1;
 
   useEffect(() => {
+    if (!isOpen) {
+      return undefined;
+    }
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         onClose();
@@ -45,7 +46,11 @@ export function ImageLightbox({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [hasNext, hasPrevious, onClose, onIndexChange, safeIndex]);
+  }, [hasNext, hasPrevious, isOpen, onClose, onIndexChange, safeIndex]);
+
+  if (!isOpen || image === undefined) {
+    return null;
+  }
 
   return (
     <div

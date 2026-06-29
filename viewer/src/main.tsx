@@ -1,12 +1,14 @@
 import { Link, Outlet, RouterProvider, createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
-import { Boxes, Bug, Database, Image, Map, Mountain, Search } from "lucide-react";
+import { Boxes, Bug, Cuboid, Database, Image, Layers, Map, Mountain, Search } from "lucide-react";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { Badge } from "./components/ui/badge";
 import { cn } from "./lib/utils";
 import { AssetsPage } from "./pages/AssetsPage";
+import { AimgPage } from "./pages/AimgPage";
 import { DebugPage } from "./pages/DebugPage";
 import { MapObjectsPage } from "./pages/MapObjectsPage";
+import { ModelsPage } from "./pages/ModelsPage";
 import { OverviewPage } from "./pages/OverviewPage";
 import { WorldMapPage } from "./pages/WorldMapPage";
 import "./styles.css";
@@ -16,7 +18,9 @@ function AppLayout() {
     { to: "/", label: "概览", icon: Database },
     { to: "/map", label: "世界地图", icon: Map },
     { to: "/map/objects", label: "地图对象", icon: Mountain },
-    { to: "/assets", label: "资产库", icon: Image }
+    { to: "/assets", label: "图像资产", icon: Image },
+    { to: "/models", label: "3D 模型", icon: Cuboid },
+    { to: "/aimg", label: "AIMG 覆盖", icon: Layers }
   ] as const;
 
   return (
@@ -110,13 +114,25 @@ const assetsRoute = createRoute({
   component: AssetsPage
 });
 
+const modelsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/models",
+  component: ModelsPage
+});
+
+const aimgRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/aimg",
+  component: AimgPage
+});
+
 const debugRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/debug",
   component: DebugPage
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, worldMapRoute, mapObjectsRoute, assetsRoute, debugRoute]);
+const routeTree = rootRoute.addChildren([indexRoute, worldMapRoute, mapObjectsRoute, assetsRoute, modelsRoute, aimgRoute, debugRoute]);
 const router = createRouter({ routeTree });
 
 declare module "@tanstack/react-router" {
