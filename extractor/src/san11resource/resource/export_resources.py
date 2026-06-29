@@ -24,7 +24,7 @@ import mmap
 import struct
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import BinaryIO, Iterable
+from typing import Iterable
 
 from PIL import Image
 
@@ -341,6 +341,8 @@ def export_link(
                                 )
                             )
                         output = ";".join(outputs)
+                        if header["layer_count"] > 1:
+                            note = f"{header['layer_count']} WFTX layers exported"
                     except Exception as exc:
                         kind = "raw"
                         note = f"wftx export failed: {exc}"

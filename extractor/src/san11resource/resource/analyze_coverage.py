@@ -30,7 +30,7 @@ PARSED_SIGNATURES = {
     b"AIMG0001": "AIMG metadata parsed/exported",
     b"SHEX0008": "SHEX map-grid parsed/exported",
     b"GCOL0001": "GCOL map texture/grid parsed/exported",
-    b"K3ST0006": "K3ST large map channel data parsed/exported",
+    b"K3ST0006": "K3ST stage terrain control/aux planes parsed/exported",
     b"OBJS0004": "OBJS map object records parsed/exported",
 }
 

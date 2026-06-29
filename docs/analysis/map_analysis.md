@@ -90,7 +90,7 @@ staggered_x = x + 0.5 * row_parity
 ```text
 4787-4790  GCOL0001  4 blocks, each 8 + 1025*1025*3 bytes
 4791       SHEX0008  8 + 40000*11 bytes
-4793       K3ST0006  12 + 2049*2049*4 bytes
+4793       K3ST0006  8 + 1025*1025*8 + 1024*1024*8 bytes
 4794-4804  WFTX/DIST/SENV terrain-related texture/environment blocks
 4805       OBJS0004  8 + 65535*14 bytes
 ```
@@ -98,7 +98,15 @@ staggered_x = x + 0.5 * row_parity
 已观察结构：
 
 - `GCOL0001`：8 字节 magic 后的 payload 精确等于 `1025 * 1025 * 3`。直接按 RGB 解释会得到完整的 `1025 x 1025` 世界地图地形预览。导出器也会写出独立的 `r/g/b` 通道图。外部 San11 全地图预览 `https://xgodgame.blogspot.com/2018/05/11.html` 与 `GCOL0001` 预览在 `x/y` 转置后最匹配，所以导出器保留 raw 图，同时写出 `_map_*` 转置图用于地图方向查看。
-- `K3ST0006`：8 字节 magic 后为 4 字节未知值，再接 `2049 * 2049 * 4` 字节。额外 4 字节记录为 `u32_after_magic`；其余数据导出为 raw `2049 x 2049` RGBA 和四个灰度通道。导出器也写出 `_map_*` 转置图，以和 `GCOL0001` 的地图方向保持一致。预览明显包含世界地图形状，但通道语义还没命名。
+- `K3ST0006`：IDB 中 `default.stg` loader 会把它交给 `sub_418fb0` 解析。结构不是旧假设的 `u32 + 2049*2049*4 RGBA`，而是：
+
+```text
+8 bytes             magic/version: K3ST0006
+1025*1025*8 bytes  control records
+1024*1024*8 bytes  auxiliary qword bitfield plane
+```
+
+  导出器现在输出 `control_b00..b07`、按 IDB 普通地面采样 offset 复原的 `idb_ground_height_byte`、`aux_qword_b00..b07`，以及按 `0x415e20/0x415d80` 复原的 `derived_b00..b09`。需要注意：`idb_ground_height_byte` 只对应普通地面分支；水/河等特殊地形会改读派生表，见下文。
 - `OBJS0004`：8 字节 magic 后的 payload 精确等于 `65535 * 14`。非零记录只有 1195 条。当前最佳字段拆分：
 
 ```text
@@ -119,9 +127,27 @@ byte 12..13 未知，active record 中目前为 0
 游戏实际渲染中的世界地图是 3D 场景：西北方向有明显高山，东南方向有大片海面。这使地图资源不能只按 2D 预览图理解。当前更合理的模型是：
 
 - `SHEX0008` 提供 `200 x 200` 逻辑格子、地形/移动分类和若干低分辨率索引字段；
-- `K3ST0006` 的 `2049 x 2049` 四通道数据提供更高分辨率的地形/通道贴图，其中 `map_c0` 已能看到西北大片高频山脉/坡面纹理，东南大面积暗区则可能对应海面、水域 mask 或不可通行区域；
+- `K3ST0006` 是 `default.stg` 的强候选，承载 3D stage 地形控制数据。`control_b00` 在视觉上更像水低、山高的地形代理层；IDB 普通地面高度采样则读 `this+0x800000 + index*10`，对应展开后前一条 control record 的 `b02`。这两者不能混为一谈；
+- K3ST 后半 8MB 在 IDB 中按 `1024x1024` 个 qword bitfield 使用，而不是按 `2048x2048` u16 高度图使用。`0x415e20` 从每个 `4x4` qword block 中提取派生表，`derived_b07` 是水/河高度分支读取的 byte，`derived_b08` 是 `0x415d80` 对四角 `control_b00` 与该高度比较得到的 4-bit mask；
+- `aux_qword_b05` 视觉上非常像水域 mask：水/河/海区域值高，其他区域接近 0。按 `0x415e20` 的 qword bit extraction，它不是独立二值 mask，而是 qword bitfield 的一部分；`derived_b07 = (qword >> 44) & 0xff` 会使用到 `b05` 的高 nibble 和 `b06` 的低 nibble。因此它应命名为水域相关 bitfield byte，而不是最终水面 mask；
 - `GCOL0001` 更像季节/颜色预览或颜色层，不适合作为权威 grid 数据；
-- `default.stg` 附近的 data-buffer/descriptor pair 目前只暴露 `2`/`4` 字节 stream，形态更像分批索引、短属性或渲染辅助流，而不是直接未压缩顶点 position buffer。
+- `default.stg` 附近的 data-buffer/descriptor pair 目前只暴露 `2`/`4` 字节 stream，形态更像分批索引、短属性或渲染辅助流，而不是 `default.stg` 本体。`default.stg` 现在应优先绑定到 `K3ST0006`。
+
+游戏截图约束补充：
+
+- 曹操教程场景截图中，底部状态栏显示当前格为 `地形：河（濮陽）`、`坐标：125,65`。
+- 真实画面里 `125,65` 附近是黄河/港口/河谷区域，水面是连续低洼面，山体主要表现为局部坡面、山脊和地表贴图变化；白色雾/水汽沿河谷和低地区域出现，不是全图均匀云层。
+- `SHEX0008` 在 `(125,65)` 的字段为 `b00=0,b01=30,b04=6,b09=14`，相邻河/陆过渡格会在 `b00` 和 `b01` 上变化，例如 `(120,65)` 为 `b00=15,b01=29`、`(130,65)` 为 `b00=5,b01=30`。这说明低分辨率逻辑格子能直接标出“河”及其相邻过渡。
+- 按 IDB 的 `0x417770` 坐标换算，逻辑格 `(125,65)` 映射到 K3ST control 坐标约 `(614,376)`。该点附近 `control_b00=0`，符合河/水低洼的视觉直觉；普通地面路径读到的 `idb_ground_height_byte=136`，但截图显示该格为“河”，而 IDB 在 `0x417770` 对 runtime 地形类型 `6..8` 有特殊分支：不取普通高度 byte，而是取另一个派生表的 byte+7，再乘 `0.5`。因此河/水高度不能用普通地面高度图直接判断。
+
+当前结论：K3ST 不再只是“通道诊断图”，而是 `default.stg` 的核心 stage 数据。`control_b00` 更适合作为当前 viewer 的视觉高度代理；`idb_ground_height_byte` 是普通地面分支的 IDB 诊断层；`derived_b07` 是水/河分支高度来源。剩余问题是 control record 其他 byte 的语义、qword bitfield 的完整 bit layout，以及 terrain mesh 分块/材质生成过程。
+
+新的 IDB loader 约束：
+
+- `media/stage/default.hex` 在 `sub_5a1fe0` 中加载后，紧接着调用 `struct_map_grid_ARRAY` 相关函数 `0x484350`；另一个 `default.hex` 使用点 `sub_4a4f30` 也把资源送入 `0x6fb0e68 struct_map_grid_ARRAY`。这强化了 `default.hex/SHEX0008` 是逻辑格子层的判断。
+- `media/stage/default.stg` 在同一个 `sub_5a1fe0` 中加载，随后进入 `0x3260860` 的 `sub_41af90`。该函数会按 payload 类型分发：`K3ST` 进入 `sub_418fb0`，`GCOL` 进入 `sub_4191f0`，`OBJS` 进入 `sub_419280`。
+- `sub_418fb0` 对 `K3ST0006` 的读取大小与 `san11pkres.bin` entry `4793` 完全吻合：`8 + 1025*1025*8 + 1024*1024*8 = 16793616` 字节。因此 `media/stage/default.stg -> entry 4793 K3ST0006` 现在是高置信绑定。
+- `0x4176b0/0x417770` 是地形顶点坐标采样线索：X/Z 坐标乘 `5.0`，普通地面高度 byte 乘 `0.5`。普通分支读的是 K3ST expanded runtime 区的 shifted `b02`，不是 `control_b00`。当 runtime map grid 的地形低 5 bit 在 `6..8` 时，函数改读派生表 byte+7，也就是导出器的 `derived_b07`，并先加 `0.0025` 再乘 `0.5`。
 
 exe 字符串中存在 `ShowGroundWireframe`、`ShowGroundPolygon`、`ShowWater`、`ShowDistantView`、`ViewHeight`、`WaterAnimTime`、`WaterRepetition` 等 stage/debug 配置名，进一步说明世界地图渲染层包含 ground polygon、水面和 distant view。后续需要用 IDA xref 确认这些配置读写的具体渲染函数，再反推 `default.stg`、`K3ST0006` 和 ground/water 贴图的绑定关系。
 
@@ -141,7 +167,7 @@ IDA 线索补充：
 - `buffer_descriptors.csv/json`：声明前一个 data entry 精确大小的小 descriptor entry
 - `buffer_streams.csv/json`：descriptor 中的 40 字节 stream 记录
 - `entry_*_GCOL0001/*_rgb.png`、`*_map_rgb.png` 和通道图
-- `entry_*_K3ST0006/*_rgba.png`、`*_map_rgba.png` 和通道图
+- `entry_*_K3ST0006/*_control_b*.png`、`*_aux_qword_b*.png`、`*_derived_b*.png`
 - `entry_*_OBJS0004/*_by_group.png`、`*_by_object_type.png` 散点图
 
 ## Data-buffer descriptor pair
@@ -170,7 +196,7 @@ san11pkres.bin 4868 data, 4869 descriptor
 
 1. 从 LINK 表开始逐 entry 分析，避免在像素数据中误扫 signature。
 2. 按相邻 entry 和 8 字节 signature 聚类。地图 signature 在资源顺序和 exe 字符串中都集中出现。
-3. 先用精确大小关系验证，再赋予含义。例如 `1025*1025*3`、`2049*2049*4`、`40000*11`、`65535*14`。
+3. 先用精确大小关系验证，再赋予含义。例如 `1025*1025*3`、`1025*1025*8 + 1024*1024*8`、`40000*11`、`65535*14`。
 4. 对无 signature 的 descriptor/data pair，用跨 entry size 和 stream bounds 验证，再计入 parsed。
 5. 先导出视觉证据。全图预览和坐标散点图比仅凭几个字节命名字段更可靠。
 6. 有外部截图或地图时做对照。XGodGame 的 San11 地图缩略图确认了 `GCOL0001` 的正确地图方向是 raw 字节序图的 `x/y` 转置。

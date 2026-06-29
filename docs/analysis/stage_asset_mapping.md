@@ -6,13 +6,16 @@ already found in `san11pkres.bin`.
 
 ## Why GCOL/K3ST sampling is not enough
 
-`GCOL0001` and `K3ST0006` are useful visual evidence, but they should not be
-used as authoritative per-grid asset identifiers.
+`GCOL0001` is useful visual evidence, but it should not be used as an
+authoritative per-grid asset identifier. `K3ST0006` is now stronger than a
+visual hint: IDB shows it is the `default.stg` parser payload.
 
 - `GCOL0001` looks like a full-map RGB preview or color channel payload.
-- `K3ST0006` looks like a full-map RGBA channel payload.
-- Sampling either image at a logical grid coordinate can only produce a visual
-  hint. It does not prove which model or texture the game loads for that cell.
+- `K3ST0006` is parsed by the stage loader as `1025*1025*8` control records
+  plus a `1024*1024*8` auxiliary qword bitfield plane.
+- Sampling exported diagnostic images at a logical grid coordinate can only
+  produce a visual hint. The IDB coordinate conversion and terrain-type
+  branches are required before assigning semantic height/water meaning.
 
 The more promising evidence is in the executable and IDA data: the game has
 explicit virtual paths for stage data, stage object tables, ground textures,
@@ -93,12 +96,12 @@ Current summary:
 
 ```text
 stage paths: 470
-candidate bindings: 56
+candidate bindings: 58
 
 candidate confidence:
-  high:   32
-  medium: 17
-  low:     7
+  high:   33
+  medium: 21
+  low:     4
 ```
 
 ## Working model
@@ -140,11 +143,15 @@ Treat the world map as three related layers rather than a simple
 
    ```text
    media/stage/default.stg
-   data-buffer/descriptor pairs around san11pkres entries 4864..4869
+   K3ST0006
    ```
 
-   These may describe rendered terrain geometry or batching data. They are more
-   likely to carry terrain mesh information than `GCOL0001`/`K3ST0006` previews.
+   IDB `sub_418fb0` parses K3ST into a `1025x1025` control record area and a
+   `1024x1024` qword bitfield plane. `control_b00` visually behaves like a
+   terrain height proxy, while `0x4176b0/0x417770` sample a separate
+   ordinary-ground byte from the expanded runtime K3ST layout when building 3D
+   positions. Water/river cells read `derived_b07`, built by `0x415e20` from
+   the qword bitfield plane.
 
 3. Placed map objects:
 
@@ -188,15 +195,17 @@ Evidence:
 This is still technically order-based, but it is much stronger than image
 sampling.
 
-Medium-confidence stage control/data candidates:
+Stage control/data candidates:
 
 ```text
 media/stage/object.sto               -> entry 4805 OBJS0004
 media/stage/default.hex              -> entry 4791 or 4863 SHEX0008
+media/stage/default.stg              -> entry 4793 K3ST0006
 media/stage/default.sef              -> entry 4792 SEFF0001
 media/stage/envinfo.sea              -> entry 4799 SENV0002
 media/stage/distantview/distantview.bin -> entry 4795 DIST0002
 media/stage/distantview/*_distantview.wft -> entries 4794/4796/4797/4798 WFTX0010
+media/stage/water.wft                -> entries 4800..4803 WFTX0010
 media/stage/hex.wft                  -> entry 4804 WFTX0010
 media/stage/tree/tree_*.wft          -> entries 4840..4843 WFTX0010
 ```
@@ -205,22 +214,27 @@ Notes:
 
 - entry `4794` visually looks like a distant mountain/sky panorama, so the
   `distantview` binding is more plausible than mapping it to ground textures;
+- entries `4800..4803` are consecutive 64x64 24-bit WFTX payloads with
+  `unknown=36` and a large extra payload before the exported tile. IDB shows
+  `media/stage/water.wft` has a dedicated water loader/render path and
+  `WaterAnimTime`/`WaterRepetition` options, so these are now the best water
+  texture candidates;
 - entry `4804` is a 256x512 atlas with terrain/road/facility labels and
   direction glyphs, making it a plausible `hex.wft` candidate;
 - entry `4840` visually looks like a vegetation atlas, making `tree_*.wft ->
   4840..4843` more plausible than the earlier `4800..4803` WFTX group;
-- entries `4800..4803` are regular 64x64 dot/grid-like textures and should not
-  be treated as tree textures without further evidence.
+- entries `4800..4803` should no longer be treated as tree textures without
+  stronger evidence.
 
 Low-confidence stage layout candidates:
 
 ```text
 media/stage/color_*.sea -> entries 4787..4790 GCOL0001
-media/stage/default.stg -> entries 4864/4866/4868 data-buffer payloads
+entries 4864/4866/4868 -> data-buffer payloads after the stage cluster
 ```
 
-These remain weak because extension/signature semantics do not line up directly.
-They are useful as search targets for loader xrefs, not as final bindings.
+The data-buffer entries are still useful renderer-buffer candidates, but they
+should no longer be treated as the primary `default.stg` binding.
 
 ## IDA xref follow-up
 
@@ -247,6 +261,14 @@ Interpretation:
 
 - `sub_5a1fe0` is now the best IDA target for `default.*`, `object.sto`, and
   `distantview` loader behavior.
+- `sub_41af90` dispatches stage payloads by signature: `K3ST` to `sub_418fb0`,
+  `GCOL` to `sub_4191f0`, and `OBJS` to `sub_419280`.
+- `sub_418fb0` consumes exactly `8 + 1025*1025*8 + 1024*1024*8` bytes for
+  `K3ST0006`, matching `san11pkres.bin` entry `4793`.
+- `0x4176b0/0x417770` sample terrain vertex positions from the runtime K3ST
+  layout. The ordinary-ground branch reads a shifted expanded-control byte,
+  effectively previous-record `b02`, then scales it by `0.5`; terrain classes
+  `6..8` use `derived_b07` from the `0x415e20` table instead.
 - `sub_40f510` is a good target for `hex.wft`.
 - `sub_4224d0` and `sub_422eb0` are good targets for `water.wft`.
 - `sub_5a2a60` is a good target for `envinfo.sea`.
@@ -288,12 +310,18 @@ It is probably wrong to expect each logical map grid to have its own standalone
   trees, hazards, and special sites;
 - object `type` then selects a named stage model/texture family.
 
-The strongest current terrain-surface clue is `K3ST0006 map_c0`: it shows
-high-frequency mountain/relief structure in the northwest and large dark
-regions toward the southeast, matching the visible world-map composition better
-than `SHEX b01` alone. `SHEX b01` still forms a map-shaped low-resolution field,
-but its 0..92 range looks more like a region/material/height-layer index than a
-direct high-resolution height map.
+The strongest current visual terrain-surface clue is `K3ST control_b00`: it
+keeps rivers and sea low while preserving mountain/highland structure. The
+IDB-ground-height diagnostic plane is still important, but it only explains the
+ordinary terrain branch; water and river cells branch to `derived_b07`.
+`derived_b08` is a 4-bit corner mask comparing nearby `control_b00` values
+against `derived_b07`. `SHEX b01` still forms a map-shaped low-resolution
+field, but its `0..92` range looks more like a region/material/height-layer
+index than a direct high-resolution height map.
+`aux_qword_b05` is also strongly water-related: water and river regions are
+high while most non-water terrain is near zero. It should be treated as a raw
+bitfield byte that contributes to derived water data, not as the final binary
+water mask.
 
 ## Next investigation targets
 
@@ -317,8 +345,11 @@ direct high-resolution height map.
    ```text
    object.sto -> OBJS0004
    default.hex -> SHEX0008
-   default.stg -> data-buffer/descriptor pair or another raw stage payload
+   default.stg -> K3ST0006
    ```
 
-5. Build an enrichment manifest only after a path-to-entry binding is supported
+5. Trace the rest of the qword bitfield layout used by `0x415e20` and the
+   renderer functions around `0x417f30`, then decide how `control_b00`,
+   ordinary-ground height, and `derived_b07/b08` should combine in the viewer.
+6. Build an enrichment manifest only after a path-to-entry binding is supported
    by ordering, xrefs, or resource loader behavior.

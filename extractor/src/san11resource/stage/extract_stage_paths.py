@@ -194,15 +194,14 @@ def build_candidates(paths: list[StagePath], entries: list[LinkEntry]) -> list[S
             )
 
     for path in [row.path for row in paths if row.path == "media/stage/default.stg"]:
-        for entry_index in (4864, 4866, 4868):
-            add_candidate(
-                candidates,
-                path,
-                by_entry.get(entry_index),
-                "low",
-                "nearby data-buffer entries follow the second SHEX0008 block",
-                "Possible stage renderer buffers; not filename-bound yet.",
-            )
+        add_candidate(
+            candidates,
+            path,
+            by_entry.get(4793),
+            "high",
+            "IDB default.stg loader dispatches to the K3ST parser and san11pkres entry 4793 is K3ST0006",
+            "sub_5a1fe0 loads default.stg; sub_41af90 dispatches K3ST to sub_418fb0, which parses the exact entry 4793 size.",
+        )
 
     for path in [row.path for row in paths if row.path == "media/stage/default.sef"]:
         add_candidate(
@@ -223,6 +222,17 @@ def build_candidates(paths: list[StagePath], entries: list[LinkEntry]) -> list[S
             "envinfo.sea path and SENV0002 signature are both environment-related",
             "Likely filename-to-entry binding by signature and cluster position.",
         )
+
+    for path in [row.path for row in paths if row.path == "media/stage/water.wft"]:
+        for entry_index in (4800, 4801, 4802, 4803):
+            add_candidate(
+                candidates,
+                path,
+                by_entry.get(entry_index),
+                "medium",
+                "water.wft has dedicated IDB loader/render xrefs and entries 4800..4803 are consecutive 64x64 WFTX payloads with unknown=36 and large extra data",
+                "Likely animated/repeated water texture tiles; extra WFTX payload semantics and exact filename-to-entry binding still need confirmation.",
+            )
 
     for path in [row.path for row in paths if row.path == "media/stage/distantview/distantview.bin"]:
         add_candidate(

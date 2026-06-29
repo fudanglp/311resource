@@ -8,8 +8,9 @@ SHEX0008 map-grid block:
 
 - GCOL0001: 8 + 1025 * 1025 * 3 bytes, exported as raw and map-oriented
   RGB/channel images.
-- K3ST0006: 12 + 2049 * 2049 * 4 bytes, exported as raw and map-oriented
-  4-channel images.
+- K3ST0006: parsed according to the IDB stage loader as an 8-byte header,
+  1025 * 1025 * 8-byte control records, and a 1024 * 1024 * 8-byte auxiliary
+  plane.
 - OBJS0004: 8 + 65535 * 14 bytes, exported as active 14-byte object records.
 """
 
@@ -37,7 +38,18 @@ SHEX_MAGIC = b"SHEX0008"
 MAP_SIGNATURES = {GCOL_MAGIC, K3ST_MAGIC, OBJS_MAGIC, SHEX_MAGIC}
 
 GCOL_SIZE = 8 + 1025 * 1025 * 3
-K3ST_SIZE = 12 + 2049 * 2049 * 4
+K3ST_CONTROL_WIDTH = 1025
+K3ST_CONTROL_HEIGHT = 1025
+K3ST_CONTROL_STRIDE = 8
+K3ST_AUX_WIDTH = 1024
+K3ST_AUX_HEIGHT = 1024
+K3ST_AUX_STRIDE = 8
+K3ST_DERIVED_WIDTH = 256
+K3ST_DERIVED_HEIGHT = 256
+K3ST_DERIVED_STRIDE = 10
+K3ST_CONTROL_SIZE = K3ST_CONTROL_WIDTH * K3ST_CONTROL_HEIGHT * K3ST_CONTROL_STRIDE
+K3ST_AUX_SIZE = K3ST_AUX_WIDTH * K3ST_AUX_HEIGHT * K3ST_AUX_STRIDE
+K3ST_SIZE = 8 + K3ST_CONTROL_SIZE + K3ST_AUX_SIZE
 OBJS_RECORD_SIZE = 14
 OBJS_RECORD_COUNT = 65535
 OBJS_SIZE = 8 + OBJS_RECORD_COUNT * OBJS_RECORD_SIZE
@@ -186,29 +198,135 @@ def save_rgb_and_channels(data: bytes, width: int, height: int, output_dir: Path
     return paths
 
 
-def save_k3st_channels(data: bytes, output_dir: Path, stem: str) -> tuple[int, list[str]]:
+def save_grayscale_and_map(data: bytes, width: int, height: int, output_dir: Path, stem: str) -> list[str]:
     ensure_dir(output_dir)
-    unknown = struct.unpack_from("<I", data, 8)[0]
-    pixels = data[12:]
+    path = output_dir / f"{stem}.png"
+    image = Image.frombytes("L", (width, height), data)
+    image.save(path)
+    map_path = output_dir / f"{stem}_map.png"
+    image.transpose(Image.Transpose.TRANSPOSE).save(map_path)
+    return [str(path), str(map_path)]
 
-    rgba_path = output_dir / f"{stem}_rgba.png"
-    rgba_image = Image.frombytes("RGBA", (2049, 2049), pixels)
-    rgba_image.save(rgba_path)
-    map_rgba_path = output_dir / f"{stem}_map_rgba.png"
-    rgba_image.transpose(Image.Transpose.TRANSPOSE).save(map_rgba_path)
-    paths = [str(rgba_path), str(map_rgba_path)]
 
-    channel_names = ("c0", "c1", "c2", "c3")
-    for channel, name in enumerate(channel_names):
-        channel_bytes = bytes(pixels[index] for index in range(channel, len(pixels), 4))
-        channel_path = output_dir / f"{stem}_{name}.png"
-        channel_image = Image.frombytes("L", (2049, 2049), channel_bytes)
-        channel_image.save(channel_path)
-        map_channel_path = output_dir / f"{stem}_map_{name}.png"
-        channel_image.transpose(Image.Transpose.TRANSPOSE).save(map_channel_path)
-        paths.append(str(channel_path))
-        paths.append(str(map_channel_path))
-    return unknown, paths
+def expand_k3st_idb_ground_height_byte(control: bytes) -> bytes:
+    """Recreate the ordinary-ground byte read by the IDB height helpers.
+
+    `sub_418fb0` expands each 8-byte K3ST control record at `this+0x800008`.
+    The vertex helpers read from `this+0x800000 + index*10`, so this is not the
+    same record's byte 0. For normal ground it effectively reads the previous
+    expanded record's byte 2. Water/river terrain takes a different branch.
+    """
+    runtime = bytearray(K3ST_CONTROL_WIDTH * K3ST_CONTROL_HEIGHT * 10 + 16)
+    for record_index in range(K3ST_CONTROL_WIDTH * K3ST_CONTROL_HEIGHT):
+        source_start = record_index * K3ST_CONTROL_STRIDE
+        source = control[source_start : source_start + K3ST_CONTROL_STRIDE]
+        target_start = 8 + record_index * 10
+        runtime[target_start : target_start + 8] = source
+        runtime[target_start + 8] = source[0]
+
+    height = bytearray(K3ST_CONTROL_WIDTH * K3ST_CONTROL_HEIGHT)
+    for record_index in range(K3ST_CONTROL_WIDTH * K3ST_CONTROL_HEIGHT):
+        height[record_index] = runtime[record_index * 10]
+    return bytes(height)
+
+
+def get_k3st_control_b00(control: bytes, x: int, y: int) -> int:
+    x = max(0, min(K3ST_CONTROL_WIDTH - 1, x))
+    y = max(0, min(K3ST_CONTROL_HEIGHT - 1, y))
+    return control[(y * K3ST_CONTROL_WIDTH + x) * K3ST_CONTROL_STRIDE]
+
+
+def derive_k3st_water_table(control: bytes, aux: bytes) -> bytes:
+    derived = bytearray(K3ST_DERIVED_WIDTH * K3ST_DERIVED_HEIGHT * K3ST_DERIVED_STRIDE)
+    for y in range(K3ST_DERIVED_HEIGHT):
+        for x in range(K3ST_DERIVED_WIDTH):
+            derived_offset = (y * K3ST_DERIVED_WIDTH + x) * K3ST_DERIVED_STRIDE
+            height = 0
+            flags = 0
+            for dy in range(4):
+                for dx in range(4):
+                    aux_index = ((y * 4 + dy) * K3ST_AUX_WIDTH + (x * 4 + dx)) * K3ST_AUX_STRIDE
+                    value = struct.unpack_from("<Q", aux, aux_index)[0]
+                    candidate_height = (value >> 44) & 0xFF
+                    if candidate_height:
+                        height = candidate_height
+                        flags = ((value >> 52) & 0x03) | 0x04
+                        break
+                if height:
+                    break
+
+            derived[derived_offset + 7] = height
+            derived[derived_offset + 9] = flags
+
+            if height:
+                mask = 0
+                if get_k3st_control_b00(control, x * 4, y * 4) < height:
+                    mask |= 0x01
+                if get_k3st_control_b00(control, x * 4, y * 4 + 4) < height:
+                    mask |= 0x02
+                if get_k3st_control_b00(control, x * 4 + 4, y * 4) < height:
+                    mask |= 0x04
+                if get_k3st_control_b00(control, x * 4 + 4, y * 4 + 4) < height:
+                    mask |= 0x08
+                derived[derived_offset + 8] = mask
+
+    return bytes(derived)
+
+
+def save_k3st_channels(data: bytes, output_dir: Path, stem: str) -> list[str]:
+    ensure_dir(output_dir)
+    control = data[8 : 8 + K3ST_CONTROL_SIZE]
+    aux = data[8 + K3ST_CONTROL_SIZE :]
+    paths: list[str] = []
+
+    for channel in range(K3ST_CONTROL_STRIDE):
+        channel_bytes = bytes(control[index] for index in range(channel, len(control), K3ST_CONTROL_STRIDE))
+        paths.extend(
+            save_grayscale_and_map(
+                channel_bytes,
+                K3ST_CONTROL_WIDTH,
+                K3ST_CONTROL_HEIGHT,
+                output_dir,
+                f"{stem}_control_b{channel:02d}",
+            )
+        )
+
+    idb_ground_height = expand_k3st_idb_ground_height_byte(control)
+    paths.extend(
+        save_grayscale_and_map(
+            idb_ground_height,
+            K3ST_CONTROL_WIDTH,
+            K3ST_CONTROL_HEIGHT,
+            output_dir,
+            f"{stem}_idb_ground_height_byte",
+        )
+    )
+
+    for channel in range(K3ST_AUX_STRIDE):
+        channel_bytes = bytes(aux[index] for index in range(channel, len(aux), K3ST_AUX_STRIDE))
+        paths.extend(
+            save_grayscale_and_map(
+                channel_bytes,
+                K3ST_AUX_WIDTH,
+                K3ST_AUX_HEIGHT,
+                output_dir,
+                f"{stem}_aux_qword_b{channel:02d}",
+            )
+        )
+
+    derived = derive_k3st_water_table(control, aux)
+    for channel in range(K3ST_DERIVED_STRIDE):
+        channel_bytes = bytes(derived[index] for index in range(channel, len(derived), K3ST_DERIVED_STRIDE))
+        paths.extend(
+            save_grayscale_and_map(
+                channel_bytes,
+                K3ST_DERIVED_WIDTH,
+                K3ST_DERIVED_HEIGHT,
+                output_dir,
+                f"{stem}_derived_b{channel:02d}",
+            )
+        )
+    return paths
 
 
 def parse_objs_records(data: bytes, source: Path, entry: int) -> list[ObjsRecord]:
@@ -271,9 +389,12 @@ def analyze_payload(source: Path, entry: int, offset: int, payload: bytes, outpu
         notes.append("images=" + ",".join(Path(path).name for path in image_paths))
 
     elif signature == K3ST_MAGIC and len(payload) == K3ST_SIZE:
-        structure = "8-byte magic + u32 + 2049*2049*4 bytes"
-        unknown, image_paths = save_k3st_channels(payload, output_dir, stem)
-        notes.append(f"u32_after_magic={unknown:#x}")
+        structure = "8-byte magic + 1025*1025*8 byte control records + 1024*1024*8 byte aux qword plane"
+        image_paths = save_k3st_channels(payload, output_dir, stem)
+        notes.append("parsed_using_idb_stage_loader=sub_418fb0")
+        notes.append("idb_ground_height_byte_matches_0x4176b0/0x417770 ordinary-ground sampling")
+        notes.append("derived_b07_matches_water/river auxiliary height byte built by sub_415e20")
+        notes.append("derived_b08_matches_control_b00_corner_comparison mask built by sub_415d80")
         notes.append("images=" + ",".join(Path(path).name for path in image_paths))
 
     elif signature == OBJS_MAGIC and len(payload) == OBJS_SIZE:

@@ -1,7 +1,7 @@
 import { Html, OrbitControls } from "@react-three/drei";
-import { Canvas, useLoader, useThree } from "@react-three/fiber";
+import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Mountain, RotateCcw, Waves } from "lucide-react";
-import { Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import * as THREE from "three";
 import { Button } from "../components/ui/button";
 import { Select } from "../components/ui/select";
@@ -15,13 +15,42 @@ type TextureOption = {
 };
 
 type HeightSampleMode = "left" | "right" | "full";
-type HeightChannelMode = "r" | "g" | "b" | "a" | "luma" | "rg";
 
 const heightLayers: TextureOption[] = [
   {
-    id: "rgba",
-    label: "K3ST RGBA",
-    path: "extracted/maps/candidates/san11pkres/entry_04793_1f58cc67_K3ST0006/entry_04793_1f58cc67_K3ST0006_map_rgba.png"
+    id: "control-b00",
+    label: "K3ST control b00",
+    path: "extracted/maps/candidates/san11pkres/entry_04793_1f58cc67_K3ST0006/entry_04793_1f58cc67_K3ST0006_control_b00_map.png"
+  },
+  {
+    id: "idb-ground-height",
+    label: "IDB ground height byte",
+    path: "extracted/maps/candidates/san11pkres/entry_04793_1f58cc67_K3ST0006/entry_04793_1f58cc67_K3ST0006_idb_ground_height_byte_map.png"
+  },
+  {
+    id: "control-b02",
+    label: "K3ST control b02",
+    path: "extracted/maps/candidates/san11pkres/entry_04793_1f58cc67_K3ST0006/entry_04793_1f58cc67_K3ST0006_control_b02_map.png"
+  },
+  {
+    id: "aux-b00",
+    label: "K3ST aux qword b00",
+    path: "extracted/maps/candidates/san11pkres/entry_04793_1f58cc67_K3ST0006/entry_04793_1f58cc67_K3ST0006_aux_qword_b00_map.png"
+  },
+  {
+    id: "aux-b05",
+    label: "K3ST aux water bits b05",
+    path: "extracted/maps/candidates/san11pkres/entry_04793_1f58cc67_K3ST0006/entry_04793_1f58cc67_K3ST0006_aux_qword_b05_map.png"
+  },
+  {
+    id: "derived-b07",
+    label: "K3ST derived water height",
+    path: "extracted/maps/candidates/san11pkres/entry_04793_1f58cc67_K3ST0006/entry_04793_1f58cc67_K3ST0006_derived_b07_map.png"
+  },
+  {
+    id: "derived-b08",
+    label: "K3ST derived corner mask",
+    path: "extracted/maps/candidates/san11pkres/entry_04793_1f58cc67_K3ST0006/entry_04793_1f58cc67_K3ST0006_derived_b08_map.png"
   }
 ];
 
@@ -48,36 +77,70 @@ const colorLayers: TextureOption[] = [
   }
 ];
 
+const waterTextures: TextureOption[] = [
+  {
+    id: "water-4800",
+    label: "water 4800",
+    path: "extracted/resources/output/san11pkres/wftx/64x64_24bpp/entry_04800_211911e7.png"
+  },
+  {
+    id: "water-4801",
+    label: "water 4801",
+    path: "extracted/resources/output/san11pkres/wftx/64x64_24bpp/entry_04801_21477317.png"
+  },
+  {
+    id: "water-4802",
+    label: "water 4802",
+    path: "extracted/resources/output/san11pkres/wftx/64x64_24bpp/entry_04802_2175d447.png"
+  },
+  {
+    id: "water-4803",
+    label: "water 4803",
+    path: "extracted/resources/output/san11pkres/wftx/64x64_24bpp/entry_04803_21a43577.png"
+  }
+];
+
+const waterMaskPath =
+  "extracted/maps/candidates/san11pkres/entry_04793_1f58cc67_K3ST0006/entry_04793_1f58cc67_K3ST0006_aux_qword_b05_map.png";
+
 const meshSegments = 256;
 const terrainSize = 720;
 
 export function TerrainMapPage() {
   const [heightLayerId, setHeightLayerId] = useState(heightLayers[0].id);
   const [colorLayerId, setColorLayerId] = useState(colorLayers[0].id);
-  const [heightChannelMode, setHeightChannelMode] = useState<HeightChannelMode>("luma");
-  const [heightScale, setHeightScale] = useState(26);
-  const [heightBias, setHeightBias] = useState(-10);
-  const [seaLevel, setSeaLevel] = useState(-8);
-  const [heightSampleMode, setHeightSampleMode] = useState<HeightSampleMode>("left");
+  const [heightScale, setHeightScale] = useState(18);
+  const [heightBias, setHeightBias] = useState(0);
+  const [seaLevel, setSeaLevel] = useState(0);
+  const [heightSampleMode, setHeightSampleMode] = useState<HeightSampleMode>("full");
   const [wireframe, setWireframe] = useState(false);
-  const [showSea, setShowSea] = useState(true);
+  const [showSea, setShowSea] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
+  const [waterTextureId, setWaterTextureId] = useState(waterTextures[0].id);
+  const [waterRepeat, setWaterRepeat] = useState(38);
+  const [waterSpeed, setWaterSpeed] = useState(14);
+  const [waterOpacity, setWaterOpacity] = useState(58);
 
   const heightLayer = heightLayers.find((layer) => layer.id === heightLayerId) ?? heightLayers[0];
   const colorLayer = colorLayers.find((layer) => layer.id === colorLayerId) ?? colorLayers[0];
+  const waterTexture = waterTextures.find((texture) => texture.id === waterTextureId) ?? waterTextures[0];
 
   return (
     <div className="relative h-full min-h-[620px] overflow-hidden bg-[#d6ddd2]">
       <TerrainViewport
         colorUrl={repoFile(colorLayer.path)}
         heightBias={heightBias}
-        heightChannelMode={heightChannelMode}
         heightSampleMode={heightSampleMode}
         heightScale={heightScale}
         heightUrl={repoFile(heightLayer.path)}
         seaLevel={seaLevel}
         showGrid={showGrid}
         showSea={showSea}
+        waterOpacity={waterOpacity / 100}
+        waterRepeat={waterRepeat}
+        waterSpeed={waterSpeed / 100}
+        waterMaskUrl={repoFile(waterMaskPath)}
+        waterUrl={repoFile(waterTexture.path)}
         wireframe={wireframe}
       />
 
@@ -88,33 +151,18 @@ export function TerrainMapPage() {
             <h1 className="text-sm font-semibold">3D 世界地图</h1>
           </div>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            实验性地形渲染：K3ST 通道驱动高度，GCOL 提供地表颜色。参数用于校正通道语义。
+            K3ST 诊断视图。control b00 更接近视觉地形；derived water height 是水/河分支会读取的派生层。
           </p>
         </div>
 
-        <div className="pointer-events-auto grid w-full max-w-[720px] gap-3 rounded-md border border-white/50 bg-white/88 p-3 shadow-lg backdrop-blur md:grid-cols-2 xl:grid-cols-4">
-          <ControlBlock label="高度源">
+        <div className="pointer-events-auto grid w-full max-w-[920px] gap-3 rounded-md border border-white/50 bg-white/88 p-3 shadow-lg backdrop-blur md:grid-cols-2 xl:grid-cols-5">
+          <ControlBlock label="诊断层">
             <Select value={heightLayerId} onChange={(event) => setHeightLayerId(event.target.value)} className="w-full">
               {heightLayers.map((layer) => (
                 <option key={layer.id} value={layer.id}>
                   {layer.label}
                 </option>
               ))}
-            </Select>
-          </ControlBlock>
-
-          <ControlBlock label="通道组合">
-            <Select
-              value={heightChannelMode}
-              onChange={(event) => setHeightChannelMode(event.target.value as HeightChannelMode)}
-              className="w-full"
-            >
-              <option value="luma">RGB 加权</option>
-              <option value="rg">R/G 平均</option>
-              <option value="r">R / c0</option>
-              <option value="g">G / c1</option>
-              <option value="b">B / c2</option>
-              <option value="a">A / c3</option>
             </Select>
           </ControlBlock>
 
@@ -140,9 +188,23 @@ export function TerrainMapPage() {
             </Select>
           </ControlBlock>
 
-          <RangeControl label="高度倍率" max={120} min={0} onChange={setHeightScale} value={heightScale} />
-          <RangeControl label="高度偏移" max={30} min={-60} onChange={setHeightBias} value={heightBias} />
+          <RangeControl label="高度倍率" max={40} min={0} onChange={setHeightScale} value={heightScale} />
+          <RangeControl label="高度偏移" max={30} min={-30} onChange={setHeightBias} value={heightBias} />
           <RangeControl label="海平面" max={40} min={-50} onChange={setSeaLevel} value={seaLevel} />
+
+          <ControlBlock label="水面贴图">
+            <Select value={waterTextureId} onChange={(event) => setWaterTextureId(event.target.value)} className="w-full">
+              {waterTextures.map((texture) => (
+                <option key={texture.id} value={texture.id}>
+                  {texture.label}
+                </option>
+              ))}
+            </Select>
+          </ControlBlock>
+
+          <RangeControl label="水面重复" max={96} min={4} onChange={setWaterRepeat} value={waterRepeat} />
+          <RangeControl label="水面流速" max={80} min={0} onChange={setWaterSpeed} value={waterSpeed} />
+          <RangeControl label="水面透明" max={100} min={0} onChange={setWaterOpacity} value={waterOpacity} />
 
           <ControlBlock label="显示">
             <div className="flex flex-wrap gap-2">
@@ -153,11 +215,15 @@ export function TerrainMapPage() {
                 size="sm"
                 variant="outline"
                 onClick={() => {
-                  setHeightChannelMode("luma");
-                  setHeightScale(26);
-                  setHeightBias(-10);
-                  setSeaLevel(-8);
-                  setHeightSampleMode("left");
+                  setHeightLayerId(heightLayers[0].id);
+                  setHeightScale(18);
+                  setHeightBias(0);
+                  setSeaLevel(0);
+                  setHeightSampleMode("full");
+                  setWaterTextureId(waterTextures[0].id);
+                  setWaterRepeat(38);
+                  setWaterSpeed(14);
+                  setWaterOpacity(58);
                 }}
                 title="重置地形参数"
               >
@@ -178,24 +244,32 @@ export function TerrainMapPage() {
 function TerrainViewport({
   colorUrl,
   heightBias,
-  heightChannelMode,
   heightSampleMode,
   heightScale,
   heightUrl,
   seaLevel,
   showGrid,
   showSea,
+  waterOpacity,
+  waterRepeat,
+  waterSpeed,
+  waterMaskUrl,
+  waterUrl,
   wireframe
 }: {
   colorUrl: string;
   heightBias: number;
-  heightChannelMode: HeightChannelMode;
   heightSampleMode: HeightSampleMode;
   heightScale: number;
   heightUrl: string;
   seaLevel: number;
   showGrid: boolean;
   showSea: boolean;
+  waterOpacity: number;
+  waterRepeat: number;
+  waterSpeed: number;
+  waterMaskUrl: string;
+  waterUrl: string;
   wireframe: boolean;
 }) {
   return (
@@ -216,13 +290,21 @@ function TerrainViewport({
         <TerrainMesh
           colorUrl={colorUrl}
           heightBias={heightBias}
-          heightChannelMode={heightChannelMode}
           heightSampleMode={heightSampleMode}
           heightScale={heightScale}
           heightUrl={heightUrl}
           wireframe={wireframe}
         />
-        {showSea ? <SeaPlane seaLevel={seaLevel} /> : null}
+        {showSea ? (
+          <WaterSurface
+            opacity={waterOpacity}
+            repeat={waterRepeat}
+            seaLevel={seaLevel}
+            speed={waterSpeed}
+            waterMaskUrl={waterMaskUrl}
+            waterUrl={waterUrl}
+          />
+        ) : null}
         {showGrid ? <gridHelper args={[terrainSize, 24, "#2f6f83", "#8aa29a"]} position={[0, seaLevel + 0.5, 0]} /> : null}
       </Suspense>
 
@@ -254,7 +336,6 @@ function CameraTarget() {
 function TerrainMesh({
   colorUrl,
   heightBias,
-  heightChannelMode,
   heightSampleMode,
   heightScale,
   heightUrl,
@@ -262,7 +343,6 @@ function TerrainMesh({
 }: {
   colorUrl: string;
   heightBias: number;
-  heightChannelMode: HeightChannelMode;
   heightSampleMode: HeightSampleMode;
   heightScale: number;
   heightUrl: string;
@@ -275,23 +355,7 @@ function TerrainMesh({
     diffuseTexture.anisotropy = 8;
     diffuseTexture.wrapS = THREE.ClampToEdgeWrapping;
     diffuseTexture.wrapT = THREE.ClampToEdgeWrapping;
-    heightTexture.colorSpace = THREE.NoColorSpace;
-    heightTexture.wrapS = THREE.ClampToEdgeWrapping;
-    heightTexture.wrapT = THREE.ClampToEdgeWrapping;
-    heightTexture.minFilter = THREE.LinearFilter;
-    heightTexture.magFilter = THREE.LinearFilter;
-
-    if (heightSampleMode === "left") {
-      heightTexture.offset.set(0, 0);
-      heightTexture.repeat.set(0.5, 1);
-    } else if (heightSampleMode === "right") {
-      heightTexture.offset.set(0.5, 0);
-      heightTexture.repeat.set(0.5, 1);
-    } else {
-      heightTexture.offset.set(0, 0);
-      heightTexture.repeat.set(1, 1);
-    }
-    heightTexture.needsUpdate = true;
+    configureHeightTexture(heightTexture, heightSampleMode);
   }, [diffuseTexture, heightSampleMode, heightTexture]);
 
   return (
@@ -300,7 +364,6 @@ function TerrainMesh({
       <TerrainMaterial
         colorMap={diffuseTexture}
         heightBias={heightBias}
-        heightChannelMode={heightChannelMode}
         heightMap={heightTexture}
         heightSampleMode={heightSampleMode}
         heightScale={heightScale}
@@ -310,10 +373,29 @@ function TerrainMesh({
   );
 }
 
+function configureHeightTexture(texture: THREE.Texture, heightSampleMode: HeightSampleMode) {
+  texture.colorSpace = THREE.NoColorSpace;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+
+  if (heightSampleMode === "left") {
+    texture.offset.set(0, 0);
+    texture.repeat.set(0.5, 1);
+  } else if (heightSampleMode === "right") {
+    texture.offset.set(0.5, 0);
+    texture.repeat.set(0.5, 1);
+  } else {
+    texture.offset.set(0, 0);
+    texture.repeat.set(1, 1);
+  }
+  texture.needsUpdate = true;
+}
+
 function TerrainMaterial({
   colorMap,
   heightBias,
-  heightChannelMode,
   heightMap,
   heightSampleMode,
   heightScale,
@@ -321,7 +403,6 @@ function TerrainMaterial({
 }: {
   colorMap: THREE.Texture;
   heightBias: number;
-  heightChannelMode: HeightChannelMode;
   heightMap: THREE.Texture;
   heightSampleMode: HeightSampleMode;
   heightScale: number;
@@ -331,12 +412,11 @@ function TerrainMaterial({
     () => ({
       colorMap: { value: colorMap },
       heightBias: { value: heightBias },
-      heightChannelMode: { value: channelModeToUniform(heightChannelMode) },
       heightMap: { value: heightMap },
       heightSampleMode: { value: sampleModeToUniform(heightSampleMode) },
       heightScale: { value: heightScale }
     }),
-    [colorMap, heightBias, heightChannelMode, heightMap, heightSampleMode, heightScale]
+    [colorMap, heightBias, heightMap, heightSampleMode, heightScale]
   );
 
   return (
@@ -347,25 +427,6 @@ function TerrainMaterial({
       wireframe={wireframe}
     />
   );
-}
-
-function channelModeToUniform(mode: HeightChannelMode) {
-  if (mode === "r") {
-    return 0;
-  }
-  if (mode === "g") {
-    return 1;
-  }
-  if (mode === "b") {
-    return 2;
-  }
-  if (mode === "a") {
-    return 3;
-  }
-  if (mode === "rg") {
-    return 5;
-  }
-  return 4;
 }
 
 function sampleModeToUniform(mode: HeightSampleMode) {
@@ -381,7 +442,6 @@ function sampleModeToUniform(mode: HeightSampleMode) {
 const terrainVertexShader = `
   uniform sampler2D heightMap;
   uniform float heightBias;
-  uniform int heightChannelMode;
   uniform int heightSampleMode;
   uniform float heightScale;
 
@@ -398,29 +458,9 @@ const terrainVertexShader = `
     return uv;
   }
 
-  float heightValue(vec4 sampleValue) {
-    if (heightChannelMode == 0) {
-      return sampleValue.r;
-    }
-    if (heightChannelMode == 1) {
-      return sampleValue.g;
-    }
-    if (heightChannelMode == 2) {
-      return sampleValue.b;
-    }
-    if (heightChannelMode == 3) {
-      return sampleValue.a;
-    }
-    if (heightChannelMode == 5) {
-      return (sampleValue.r + sampleValue.g) * 0.5;
-    }
-    return dot(sampleValue.rgb, vec3(0.299, 0.587, 0.114));
-  }
-
   void main() {
     vUv = uv;
-    vec4 heightSample = texture2D(heightMap, heightUv(uv));
-    float h = heightValue(heightSample);
+    float h = texture2D(heightMap, heightUv(uv)).r;
     vHeight = h;
     vec3 displaced = position;
     displaced.z += h * heightScale + heightBias;
@@ -443,22 +483,115 @@ const terrainFragmentShader = `
   }
 `;
 
-function SeaPlane({ seaLevel }: { seaLevel: number }) {
+function WaterSurface({
+  opacity,
+  repeat,
+  seaLevel,
+  speed,
+  waterMaskUrl,
+  waterUrl
+}: {
+  opacity: number;
+  repeat: number;
+  seaLevel: number;
+  speed: number;
+  waterMaskUrl: string;
+  waterUrl: string;
+}) {
+  const materialRef = useRef<THREE.ShaderMaterial | null>(null);
+  const [waterTexture, waterMaskTexture] = useLoader(THREE.TextureLoader, [waterUrl, waterMaskUrl]);
+
+  useEffect(() => {
+    waterTexture.colorSpace = THREE.SRGBColorSpace;
+    waterTexture.wrapS = THREE.RepeatWrapping;
+    waterTexture.wrapT = THREE.RepeatWrapping;
+    waterTexture.minFilter = THREE.LinearFilter;
+    waterTexture.magFilter = THREE.LinearFilter;
+    waterTexture.anisotropy = 8;
+    waterTexture.needsUpdate = true;
+    waterMaskTexture.colorSpace = THREE.NoColorSpace;
+    waterMaskTexture.wrapS = THREE.ClampToEdgeWrapping;
+    waterMaskTexture.wrapT = THREE.ClampToEdgeWrapping;
+    waterMaskTexture.minFilter = THREE.LinearFilter;
+    waterMaskTexture.magFilter = THREE.LinearFilter;
+    waterMaskTexture.needsUpdate = true;
+  }, [waterMaskTexture, waterTexture]);
+
+  const uniforms = useMemo(
+    () => ({
+      time: { value: 0 },
+      waterMap: { value: waterTexture },
+      waterMaskMap: { value: waterMaskTexture },
+      waterOpacity: { value: opacity },
+      waterRepeat: { value: repeat },
+      waterSpeed: { value: speed }
+    }),
+    [opacity, repeat, speed, waterMaskTexture, waterTexture]
+  );
+
+  useFrame((state) => {
+    if (materialRef.current) {
+      materialRef.current.uniforms.time.value = state.clock.elapsedTime;
+    }
+  });
+
   return (
-    <mesh position={[0, seaLevel, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-      <planeGeometry args={[terrainSize * 1.05, terrainSize * 1.05, 1, 1]} />
-      <meshPhysicalMaterial
-        color="#2f7889"
+    <mesh position={[0, seaLevel + 0.18, 0]} renderOrder={3} rotation={[-Math.PI / 2, 0, 0]}>
+      <planeGeometry args={[terrainSize * 1.02, terrainSize * 1.02, 1, 1]} />
+      <shaderMaterial
+        ref={materialRef}
+        depthTest
         depthWrite={false}
-        metalness={0}
-        opacity={0.24}
-        roughness={0.38}
+        fragmentShader={waterFragmentShader}
         transparent
-        transmission={0}
+        uniforms={uniforms}
+        vertexShader={waterVertexShader}
       />
     </mesh>
   );
 }
+
+const waterVertexShader = `
+  varying vec2 vUv;
+
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const waterFragmentShader = `
+  uniform sampler2D waterMap;
+  uniform sampler2D waterMaskMap;
+  uniform float time;
+  uniform float waterOpacity;
+  uniform float waterRepeat;
+  uniform float waterSpeed;
+
+  varying vec2 vUv;
+
+  void main() {
+    float waterMaskValue = texture2D(waterMaskMap, vUv).r;
+    float waterMask = smoothstep(0.05, 0.22, waterMaskValue);
+    if (waterMask <= 0.01) {
+      discard;
+    }
+
+    vec2 flow = vec2(time * waterSpeed * 0.18, time * waterSpeed * 0.11);
+    vec3 tile = texture2D(waterMap, vUv * waterRepeat + flow).rgb;
+    float shine = dot(tile, vec3(0.299, 0.587, 0.114));
+    vec3 deep = vec3(0.015, 0.20, 0.34);
+    vec3 shallow = vec3(0.04, 0.42, 0.58);
+    vec3 highlight = vec3(0.22, 0.68, 0.76);
+    float wave = smoothstep(0.24, 0.92, shine);
+    vec3 color = mix(deep, shallow, wave);
+    color = mix(color, highlight, wave * 0.22);
+    color = mix(color, tile, 0.04);
+    float alpha = waterOpacity * waterMask * mix(0.64, 0.96, wave);
+
+    gl_FragColor = vec4(color, alpha);
+  }
+`;
 
 function ViewportMessage() {
   return (
