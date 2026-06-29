@@ -1,0 +1,672 @@
+[
+  {
+    "struct": "struct_person",
+    "offset": "0x0",
+    "size_guess": "4",
+    "field": "fld_0_PersonFuncAddr",
+    "label": "PersonFuncAddr",
+    "comment": "",
+    "repeatable_comment": "武将相关函数所在地址(80 C7 79 00)",
+    "typeinfo_hex": ""
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x4",
+    "size_guess": "56",
+    "field": "fld_4_NameAndPronunciation",
+    "label": "NameAndPronunciation",
+    "comment": "",
+    "repeatable_comment": "姓名字和读音",
+    "typeinfo_hex": ""
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x3c",
+    "size_guess": "4",
+    "field": "fld_3C_PortraitID",
+    "label": "PortraitID",
+    "comment": "",
+    "repeatable_comment": "头像ID",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x40",
+    "size_guess": "4",
+    "field": "fld_40_Gender",
+    "label": "Gender",
+    "comment": "",
+    "repeatable_comment": "性别(0=男,1=女)",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x44",
+    "size_guess": "4",
+    "field": "fld_44_YearOfDebut",
+    "label": "YearOfDebut",
+    "comment": "",
+    "repeatable_comment": "登场年",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x48",
+    "size_guess": "4",
+    "field": "fld_48_YearOfBirth",
+    "label": "YearOfBirth",
+    "comment": "",
+    "repeatable_comment": "出生年",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x4c",
+    "size_guess": "4",
+    "field": "fld_4C_YearOfDeath",
+    "label": "YearOfDeath",
+    "comment": "",
+    "repeatable_comment": "死亡年",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x50",
+    "size_guess": "4",
+    "field": "fld_50_CauseOfDeath",
+    "label": "CauseOfDeath",
+    "comment": "",
+    "repeatable_comment": "死因",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x54",
+    "size_guess": "4",
+    "field": "fld_54_BloodRelation",
+    "label": "BloodRelation",
+    "comment": "",
+    "repeatable_comment": "血缘",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x58",
+    "size_guess": "4",
+    "field": "fld_58_FatherID",
+    "label": "FatherID",
+    "comment": "",
+    "repeatable_comment": "父亲ID",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x5c",
+    "size_guess": "4",
+    "field": "fld_5C_MotherID",
+    "label": "MotherID",
+    "comment": "",
+    "repeatable_comment": "母亲ID",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x60",
+    "size_guess": "4",
+    "field": "fld_60_SpouseID",
+    "label": "SpouseID",
+    "comment": "",
+    "repeatable_comment": "配偶ID",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x64",
+    "size_guess": "4",
+    "field": "fld_64_SwornSiblingID",
+    "label": "SwornSiblingID",
+    "comment": "",
+    "repeatable_comment": "义兄弟ID",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x68",
+    "size_guess": "1",
+    "field": "fld_68_Generation",
+    "label": "Generation",
+    "comment": "",
+    "repeatable_comment": "世代",
+    "typeinfo_hex": "0200"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x69",
+    "size_guess": "1",
+    "field": "fld_69_Personality",
+    "label": "Personality",
+    "comment": "",
+    "repeatable_comment": "相性",
+    "typeinfo_hex": "0200"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x6a",
+    "size_guess": "2",
+    "field": "fld_6A_Unknown1",
+    "label": "Unknown1",
+    "comment": "",
+    "repeatable_comment": "",
+    "typeinfo_hex": "0300"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x6c",
+    "size_guess": "20",
+    "field": "fld_6C_IntimatePersonsID",
+    "label": "IntimatePersonsID",
+    "comment": "",
+    "repeatable_comment": "亲近武将ID",
+    "typeinfo_hex": "1b060400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x80",
+    "size_guess": "20",
+    "field": "fld_80_HatedPersonsID",
+    "label": "HatedPersonsID",
+    "comment": "",
+    "repeatable_comment": "厌恶武将ID",
+    "typeinfo_hex": "1b060400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x94",
+    "size_guess": "4",
+    "field": "fld_94_Legion",
+    "label": "Legion",
+    "comment": "",
+    "repeatable_comment": "军团",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x98",
+    "size_guess": "4",
+    "field": "fld_98_FacilityID",
+    "label": "FacilityID",
+    "comment": "",
+    "repeatable_comment": "所属设施ID",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x9c",
+    "size_guess": "4",
+    "field": "fld_9C_Location",
+    "label": "Location",
+    "comment": "",
+    "repeatable_comment": "所在",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0xa0",
+    "size_guess": "4",
+    "field": "fld_A0_Identity",
+    "label": "Identity",
+    "comment": "",
+    "repeatable_comment": "身份",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0xa4",
+    "size_guess": "4",
+    "field": "fld_A4_OfficialPosition",
+    "label": "OfficialPosition",
+    "comment": "",
+    "repeatable_comment": "官职",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0xa8",
+    "size_guess": "4",
+    "field": "fld_A8_ScheduledLord",
+    "label": "ScheduledLord",
+    "comment": "",
+    "repeatable_comment": "登场预定君主",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0xac",
+    "size_guess": "2",
+    "field": "fld_AC_Loyalty",
+    "label": "Loyalty",
+    "comment": "",
+    "repeatable_comment": "忠诚度",
+    "typeinfo_hex": "0300"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0xae",
+    "size_guess": "2",
+    "field": "fld_AE_Merit",
+    "label": "Merit",
+    "comment": "",
+    "repeatable_comment": "功勋",
+    "typeinfo_hex": "0300"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0xb0",
+    "size_guess": "24",
+    "field": "fld_B0_BranchAffinities",
+    "label": "BranchAffinities",
+    "comment": "",
+    "repeatable_comment": "6个兵科适性",
+    "typeinfo_hex": "1b070400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0xc8",
+    "size_guess": "5",
+    "field": "fld_C8_FiveBasicValues",
+    "label": "FiveBasicValues",
+    "comment": "",
+    "repeatable_comment": "五维基础值",
+    "typeinfo_hex": "0200"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0xcd",
+    "size_guess": "3",
+    "field": "fld_CD_Unknown2",
+    "label": "Unknown2",
+    "comment": "",
+    "repeatable_comment": "",
+    "typeinfo_hex": ""
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0xd0",
+    "size_guess": "20",
+    "field": "fld_D0_FiveBasicValueChanges",
+    "label": "FiveBasicValueChanges",
+    "comment": "",
+    "repeatable_comment": "五维变动",
+    "typeinfo_hex": "1b060400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0xe4",
+    "size_guess": "4",
+    "field": "fld_E4_Birthplace",
+    "label": "Birthplace",
+    "comment": "",
+    "repeatable_comment": "出身",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0xe8",
+    "size_guess": "4",
+    "field": "fld_E8_SpecialSkill",
+    "label": "SpecialSkill",
+    "comment": "",
+    "repeatable_comment": "特技(无特技是-1)",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0xec",
+    "size_guess": "4",
+    "field": "fld_EC_SkillfulTopic",
+    "label": "SkillfulTopic",
+    "comment": "",
+    "repeatable_comment": "舌战得意话题",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0xf0",
+    "size_guess": "4",
+    "field": "fld_F0_Ideals",
+    "label": "Ideals",
+    "comment": "",
+    "repeatable_comment": "义理",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0xf4",
+    "size_guess": "4",
+    "field": "fld_F4_Ambition",
+    "label": "Ambition",
+    "comment": "",
+    "repeatable_comment": "野望",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0xf8",
+    "size_guess": "4",
+    "field": "fld_F8_Enabled",
+    "label": "Enabled",
+    "comment": "",
+    "repeatable_comment": "启用",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0xfc",
+    "size_guess": "4",
+    "field": "fld_FC_PersonalityTrait",
+    "label": "PersonalityTrait",
+    "comment": "",
+    "repeatable_comment": "性格",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x100",
+    "size_guess": "4",
+    "field": "fld_100_Voice",
+    "label": "Voice",
+    "comment": "",
+    "repeatable_comment": "声音",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x104",
+    "size_guess": "4",
+    "field": "fld_104_Tone",
+    "label": "Tone",
+    "comment": "",
+    "repeatable_comment": "口调",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x108",
+    "size_guess": "4",
+    "field": "fld_108_HanDynastyAttention",
+    "label": "HanDynastyAttention",
+    "comment": "",
+    "repeatable_comment": "汉室重视",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x10c",
+    "size_guess": "4",
+    "field": "fld_10C_StrategicTendency",
+    "label": "StrategicTendency",
+    "comment": "",
+    "repeatable_comment": "战略倾向",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x110",
+    "size_guess": "4",
+    "field": "fld_110_EarthElementTenacity",
+    "label": "EarthElementTenacity",
+    "comment": "",
+    "repeatable_comment": "地元执着",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x114",
+    "size_guess": "12",
+    "field": "fld_114_3DModel",
+    "label": "3DModel",
+    "comment": "",
+    "repeatable_comment": "3D造型",
+    "typeinfo_hex": ""
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x120",
+    "size_guess": "4",
+    "field": "fld_120_AgeOfPortraitChange",
+    "label": "AgeOfPortraitChange",
+    "comment": "",
+    "repeatable_comment": "头像变更年龄",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x124",
+    "size_guess": "1",
+    "field": "fld_124_Flags",
+    "label": "Flags",
+    "comment": "",
+    "repeatable_comment": "8个标志位(已行动、已褒奖、死亡预定、舌战五种话术)",
+    "typeinfo_hex": "0200"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x125",
+    "size_guess": "1",
+    "field": "fld_125_Unknown3",
+    "label": "Unknown3",
+    "comment": "",
+    "repeatable_comment": "",
+    "typeinfo_hex": "0200"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x126",
+    "size_guess": "2",
+    "field": "fld_126_Unknown4",
+    "label": "Unknown4",
+    "comment": "",
+    "repeatable_comment": "",
+    "typeinfo_hex": "0300"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x128",
+    "size_guess": "1",
+    "field": "fld_128_Stamina",
+    "label": "Stamina",
+    "comment": "",
+    "repeatable_comment": "体力",
+    "typeinfo_hex": "0200"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x129",
+    "size_guess": "1",
+    "field": "fld_129_Unknown5",
+    "label": "Unknown5",
+    "comment": "",
+    "repeatable_comment": "",
+    "typeinfo_hex": "0200"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x12a",
+    "size_guess": "10",
+    "field": "fld_12A_FiveBasicValueExp",
+    "label": "FiveBasicValueExp",
+    "comment": "",
+    "repeatable_comment": "五维经验",
+    "typeinfo_hex": "1b060300"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x134",
+    "size_guess": "6",
+    "field": "fld_134_BranchAffinityExp",
+    "label": "BranchAffinityExp",
+    "comment": "",
+    "repeatable_comment": "6个兵科适性经验",
+    "typeinfo_hex": "1b070200"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x13a",
+    "size_guess": "2",
+    "field": "fld_13A_Unknown6",
+    "label": "Unknown6",
+    "comment": "",
+    "repeatable_comment": "",
+    "typeinfo_hex": "0300"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x13c",
+    "size_guess": "4",
+    "field": "fld_13C_Mission",
+    "label": "Mission",
+    "comment": "",
+    "repeatable_comment": "任务(无任务是-1,任务编码从0～43)",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x140",
+    "size_guess": "20",
+    "field": "fld_140_MissionParameters",
+    "label": "MissionParameters",
+    "comment": "",
+    "repeatable_comment": "任务对象参数共5个",
+    "typeinfo_hex": "1b060400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x154",
+    "size_guess": "4",
+    "field": "fld_154_Unknown7",
+    "label": "Unknown7",
+    "comment": "",
+    "repeatable_comment": "",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x158",
+    "size_guess": "4",
+    "field": "fld_158_StayCount",
+    "label": "StayCount",
+    "comment": "",
+    "repeatable_comment": "留守计数",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x15c",
+    "size_guess": "4",
+    "field": "fld_15C_HealthLevel",
+    "label": "HealthLevel",
+    "comment": "",
+    "repeatable_comment": "健康程度",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x160",
+    "size_guess": "4",
+    "field": "fld_160_FormerAllegiance",
+    "label": "FormerAllegiance",
+    "comment": "",
+    "repeatable_comment": "旧势力",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x164",
+    "size_guess": "4",
+    "field": "fld_164_ForbiddenRuler",
+    "label": "ForbiddenRuler",
+    "comment": "",
+    "repeatable_comment": "禁止仕官君主",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x168",
+    "size_guess": "1",
+    "field": "fld_168_ForbiddenMonths",
+    "label": "ForbiddenMonths",
+    "comment": "",
+    "repeatable_comment": "禁止仕官月数",
+    "typeinfo_hex": "0200"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x169",
+    "size_guess": "1",
+    "field": "fld_169_CaptiveMonths",
+    "label": "CaptiveMonths",
+    "comment": "",
+    "repeatable_comment": "俘虏月数",
+    "typeinfo_hex": "0200"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x16a",
+    "size_guess": "2",
+    "field": "fld_16A_Unknown8",
+    "label": "Unknown8",
+    "comment": "",
+    "repeatable_comment": "",
+    "typeinfo_hex": "0300"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x16c",
+    "size_guess": "4",
+    "field": "fld_16C_Unknown9",
+    "label": "Unknown9",
+    "comment": "",
+    "repeatable_comment": "",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x170",
+    "size_guess": "5",
+    "field": "fld_170_InjuryDisplayValues",
+    "label": "InjuryDisplayValues",
+    "comment": "",
+    "repeatable_comment": "五维受伤影响的显示值",
+    "typeinfo_hex": "1b060200"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x175",
+    "size_guess": "5",
+    "field": "fld_175_UninjuredDisplayValues",
+    "label": "UninjuredDisplayValues",
+    "comment": "",
+    "repeatable_comment": "五维不受伤影响的显示值",
+    "typeinfo_hex": "1b060200"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x17a",
+    "size_guess": "2",
+    "field": "fld_17A_Unknown10",
+    "label": "Unknown10",
+    "comment": "",
+    "repeatable_comment": "",
+    "typeinfo_hex": "0300"
+  },
+  {
+    "struct": "struct_person",
+    "offset": "0x17c",
+    "size_guess": "",
+    "field": "fld_17C_Unknown11",
+    "label": "Unknown11",
+    "comment": "",
+    "repeatable_comment": "",
+    "typeinfo_hex": ""
+  }
+]

@@ -1,0 +1,42 @@
+[
+  {
+    "struct": "struc_map_grid",
+    "offset": "0x0",
+    "member": "field_0",
+    "comment": "",
+    "repeatable_comment": "",
+    "typeinfo_hex": "0700"
+  },
+  {
+    "struct": "struc_map_grid",
+    "offset": "0x4",
+    "member": "field_4",
+    "comment": "",
+    "repeatable_comment": "",
+    "typeinfo_hex": ""
+  },
+  {
+    "struct": "struc_map_grid",
+    "offset": "0x8",
+    "member": "field_8",
+    "comment": "",
+    "repeatable_comment": "",
+    "typeinfo_hex": ""
+  },
+  {
+    "struct": "struc_map_grid",
+    "offset": "0xc",
+    "member": "field_C",
+    "comment": "",
+    "repeatable_comment": "",
+    "typeinfo_hex": ""
+  },
+  {
+    "struct": "struc_map_grid",
+    "offset": "0x10",
+    "member": "field_10",
+    "comment": "",
+    "repeatable_comment": "",
+    "typeinfo_hex": ""
+  }
+]

@@ -1,0 +1,672 @@
+[
+  {
+    "kind": "function",
+    "ea": "0x47a850",
+    "name": "HasTechnologyForFacility"
+  },
+  {
+    "kind": "function",
+    "ea": "0x47c4c0",
+    "name": "GetFacilityPtrByCity"
+  },
+  {
+    "kind": "function",
+    "ea": "0x47cb80",
+    "name": "GetCoordinatesForCity"
+  },
+  {
+    "kind": "function",
+    "ea": "0x47e030",
+    "name": "ValidateFacilityID"
+  },
+  {
+    "kind": "function",
+    "ea": "0x47e370",
+    "name": "GetCoordinatesForCorp"
+  },
+  {
+    "kind": "function",
+    "ea": "0x481640",
+    "name": "GetCoordinatesForForce"
+  },
+  {
+    "kind": "function",
+    "ea": "0x483560",
+    "name": "GetCoordinatesForPass"
+  },
+  {
+    "kind": "function",
+    "ea": "0x483a50",
+    "name": "GetAdjacentCoordinateInDirection"
+  },
+  {
+    "kind": "function",
+    "ea": "0x483b00",
+    "name": "GetFacilityIDFromMapGridData"
+  },
+  {
+    "kind": "function",
+    "ea": "0x483b20",
+    "name": "GetFacilityPtrFromCoordinate"
+  },
+  {
+    "kind": "function",
+    "ea": "0x483c80",
+    "name": "GetAllAccessibleCoordinatesInRange"
+  },
+  {
+    "kind": "function",
+    "ea": "0x483db0",
+    "name": "AreCoordinatesAdjacent"
+  },
+  {
+    "kind": "function",
+    "ea": "0x486320",
+    "name": "IsFacilityOnFire"
+  },
+  {
+    "kind": "function",
+    "ea": "0x4863c0",
+    "name": "GetFacilityIDFromPtr"
+  },
+  {
+    "kind": "function",
+    "ea": "0x486660",
+    "name": "IsFacilityOfType"
+  },
+  {
+    "kind": "function",
+    "ea": "0x486680",
+    "name": "GetFacilityIDFromSPPtr"
+  },
+  {
+    "kind": "function",
+    "ea": "0x4866f0",
+    "name": "GetCityPtrFromFacilityPtr"
+  },
+  {
+    "kind": "function",
+    "ea": "0x486720",
+    "name": "GetPassPtrFromFacilityPtr"
+  },
+  {
+    "kind": "function",
+    "ea": "0x486760",
+    "name": "GetHarborPtrFromFacilityPtr"
+  },
+  {
+    "kind": "function",
+    "ea": "0x4867d0",
+    "name": "GetCorpIDForFacility"
+  },
+  {
+    "kind": "function",
+    "ea": "0x487150",
+    "name": "GetFacilityMaxDurability"
+  },
+  {
+    "kind": "function",
+    "ea": "0x487920",
+    "name": "GetFacilityCityID"
+  },
+  {
+    "kind": "function",
+    "ea": "0x4879c0",
+    "name": "GetFacilityTypeCategory"
+  },
+  {
+    "kind": "function",
+    "ea": "0x487b30",
+    "name": "FacilityTypeJudgementFunction"
+  },
+  {
+    "kind": "function",
+    "ea": "0x487ca0",
+    "name": "SetFacilityConstructionStatus"
+  },
+  {
+    "kind": "function",
+    "ea": "0x487dc0",
+    "name": "GetCoordinatesForFacility"
+  },
+  {
+    "kind": "function",
+    "ea": "0x487e10",
+    "name": "VerifySPFacilityPtr"
+  },
+  {
+    "kind": "function",
+    "ea": "0x487e20",
+    "name": "SetFacilityDurability"
+  },
+  {
+    "kind": "function",
+    "ea": "0x487eb0",
+    "name": "GetForceIDForFacility"
+  },
+  {
+    "kind": "function",
+    "ea": "0x4880e0",
+    "name": "GetPersonIDWithSkillForFacility"
+  },
+  {
+    "kind": "function",
+    "ea": "0x488350",
+    "name": "VerifySPFacilityIDRange"
+  },
+  {
+    "kind": "function",
+    "ea": "0x489610",
+    "name": "GetCoordinatesForPerson"
+  },
+  {
+    "kind": "function",
+    "ea": "0x48d910",
+    "name": "GetFacilityPtrFromHarbor"
+  },
+  {
+    "kind": "function",
+    "ea": "0x48d950",
+    "name": "GetCoordinatesForHarbor"
+  },
+  {
+    "kind": "function",
+    "ea": "0x490b90",
+    "name": "GetFacilityTypePtrFromID"
+  },
+  {
+    "kind": "function",
+    "ea": "0x490d00",
+    "name": "GetFacilityPtrFromID"
+  },
+  {
+    "kind": "function",
+    "ea": "0x490d30",
+    "name": "GetObjectLimitByType"
+  },
+  {
+    "kind": "function",
+    "ea": "0x491770",
+    "name": "getFacilityIDFromPtr"
+  },
+  {
+    "kind": "function",
+    "ea": "0x495c20",
+    "name": "IsTroopAndFacilitySameForce"
+  },
+  {
+    "kind": "function",
+    "ea": "0x495c50",
+    "name": "IsFacilityAndTroopSameForce"
+  },
+  {
+    "kind": "function",
+    "ea": "0x496030",
+    "name": "GetCoordinatesForTroop"
+  },
+  {
+    "kind": "function",
+    "ea": "0x49cf50",
+    "name": "GetFacilityTypeFromUnit"
+  },
+  {
+    "kind": "function",
+    "ea": "0x49cfb0",
+    "name": "IsCivilFacilityCompletedForUnit"
+  },
+  {
+    "kind": "function",
+    "ea": "0x49dab0",
+    "name": "DoesCityHaveSpecificFacility"
+  },
+  {
+    "kind": "function",
+    "ea": "0x49dd30",
+    "name": "IsFacilitySpecificType"
+  },
+  {
+    "kind": "function",
+    "ea": "0x49e450",
+    "name": "GetCityIDFromFacilityPtr"
+  },
+  {
+    "kind": "function",
+    "ea": "0x49e500",
+    "name": "IsSpecificFacilityNearCoordinate"
+  },
+  {
+    "kind": "function",
+    "ea": "0x4a31e0",
+    "name": "SetPersonFacility"
+  },
+  {
+    "kind": "function",
+    "ea": "0x4ae360",
+    "name": "FacilityRepairDurability"
+  },
+  {
+    "kind": "function",
+    "ea": "0x4b3ee0",
+    "name": "AdjustCityFacility"
+  },
+  {
+    "kind": "function",
+    "ea": "0x4b9840",
+    "name": "GetFacilityCombinedStrength"
+  },
+  {
+    "kind": "function",
+    "ea": "0x4c0b60",
+    "name": "GetCityFacilityCount"
+  },
+  {
+    "kind": "function",
+    "ea": "0x4c26e0",
+    "name": "CorpFacilityInfo"
+  },
+  {
+    "kind": "function",
+    "ea": "0x4cdd00",
+    "name": "ArrayFacility"
+  },
+  {
+    "kind": "function",
+    "ea": "0x4ced40",
+    "name": "SetupFacilityArray"
+  },
+  {
+    "kind": "function",
+    "ea": "0x4cf590",
+    "name": "GetPersonsByFacilityFilterCriteria"
+  },
+  {
+    "kind": "function",
+    "ea": "0x4cf600",
+    "name": "GetRecruitablePersonsByFacility"
+  },
+  {
+    "kind": "function",
+    "ea": "0x5a3300",
+    "name": "GetFacilityTypeIDWithTechnology"
+  },
+  {
+    "kind": "function",
+    "ea": "0x5a3440",
+    "name": "GetFacilityTypeIDWithTechnologyByTroop"
+  },
+  {
+    "kind": "function",
+    "ea": "0x5ae140",
+    "name": "GetFacilityDamage"
+  },
+  {
+    "kind": "function",
+    "ea": "0x5b0ee0",
+    "name": "GetFacilityDamage_5b0ee0"
+  },
+  {
+    "kind": "function",
+    "ea": "0x5b8180",
+    "name": "CheckFirstCorpOwnershipOfFacility"
+  },
+  {
+    "kind": "function",
+    "ea": "0x8ea5a8",
+    "name": "IsFacilityTypeFarm"
+  },
+  {
+    "kind": "name",
+    "ea": "0x47a850",
+    "name": "HasTechnologyForFacility"
+  },
+  {
+    "kind": "name",
+    "ea": "0x47c4c0",
+    "name": "GetFacilityPtrByCity"
+  },
+  {
+    "kind": "name",
+    "ea": "0x47cb80",
+    "name": "GetCoordinatesForCity"
+  },
+  {
+    "kind": "name",
+    "ea": "0x47e030",
+    "name": "ValidateFacilityID"
+  },
+  {
+    "kind": "name",
+    "ea": "0x47e370",
+    "name": "GetCoordinatesForCorp"
+  },
+  {
+    "kind": "name",
+    "ea": "0x481640",
+    "name": "GetCoordinatesForForce"
+  },
+  {
+    "kind": "name",
+    "ea": "0x483560",
+    "name": "GetCoordinatesForPass"
+  },
+  {
+    "kind": "name",
+    "ea": "0x483a50",
+    "name": "GetAdjacentCoordinateInDirection"
+  },
+  {
+    "kind": "name",
+    "ea": "0x483b00",
+    "name": "GetFacilityIDFromMapGridData"
+  },
+  {
+    "kind": "name",
+    "ea": "0x483b20",
+    "name": "GetFacilityPtrFromCoordinate"
+  },
+  {
+    "kind": "name",
+    "ea": "0x483c80",
+    "name": "GetAllAccessibleCoordinatesInRange"
+  },
+  {
+    "kind": "name",
+    "ea": "0x483db0",
+    "name": "AreCoordinatesAdjacent"
+  },
+  {
+    "kind": "name",
+    "ea": "0x486320",
+    "name": "IsFacilityOnFire"
+  },
+  {
+    "kind": "name",
+    "ea": "0x4863c0",
+    "name": "GetFacilityIDFromPtr"
+  },
+  {
+    "kind": "name",
+    "ea": "0x486660",
+    "name": "IsFacilityOfType"
+  },
+  {
+    "kind": "name",
+    "ea": "0x486680",
+    "name": "GetFacilityIDFromSPPtr"
+  },
+  {
+    "kind": "name",
+    "ea": "0x4866f0",
+    "name": "GetCityPtrFromFacilityPtr"
+  },
+  {
+    "kind": "name",
+    "ea": "0x486720",
+    "name": "GetPassPtrFromFacilityPtr"
+  },
+  {
+    "kind": "name",
+    "ea": "0x486760",
+    "name": "GetHarborPtrFromFacilityPtr"
+  },
+  {
+    "kind": "name",
+    "ea": "0x4867d0",
+    "name": "GetCorpIDForFacility"
+  },
+  {
+    "kind": "name",
+    "ea": "0x487150",
+    "name": "GetFacilityMaxDurability"
+  },
+  {
+    "kind": "name",
+    "ea": "0x487920",
+    "name": "GetFacilityCityID"
+  },
+  {
+    "kind": "name",
+    "ea": "0x4879c0",
+    "name": "GetFacilityTypeCategory"
+  },
+  {
+    "kind": "name",
+    "ea": "0x487b30",
+    "name": "FacilityTypeJudgementFunction"
+  },
+  {
+    "kind": "name",
+    "ea": "0x487ca0",
+    "name": "SetFacilityConstructionStatus"
+  },
+  {
+    "kind": "name",
+    "ea": "0x487dc0",
+    "name": "GetCoordinatesForFacility"
+  },
+  {
+    "kind": "name",
+    "ea": "0x487e10",
+    "name": "VerifySPFacilityPtr"
+  },
+  {
+    "kind": "name",
+    "ea": "0x487e20",
+    "name": "SetFacilityDurability"
+  },
+  {
+    "kind": "name",
+    "ea": "0x487eb0",
+    "name": "GetForceIDForFacility"
+  },
+  {
+    "kind": "name",
+    "ea": "0x4880e0",
+    "name": "GetPersonIDWithSkillForFacility"
+  },
+  {
+    "kind": "name",
+    "ea": "0x488350",
+    "name": "VerifySPFacilityIDRange"
+  },
+  {
+    "kind": "name",
+    "ea": "0x489610",
+    "name": "GetCoordinatesForPerson"
+  },
+  {
+    "kind": "name",
+    "ea": "0x48d820",
+    "name": "GetFacilityMoneyLimit"
+  },
+  {
+    "kind": "name",
+    "ea": "0x48d910",
+    "name": "GetFacilityPtrFromHarbor"
+  },
+  {
+    "kind": "name",
+    "ea": "0x48d950",
+    "name": "GetCoordinatesForHarbor"
+  },
+  {
+    "kind": "name",
+    "ea": "0x490b90",
+    "name": "GetFacilityTypePtrFromID"
+  },
+  {
+    "kind": "name",
+    "ea": "0x490d00",
+    "name": "GetFacilityPtrFromID"
+  },
+  {
+    "kind": "name",
+    "ea": "0x490d30",
+    "name": "GetObjectLimitByType"
+  },
+  {
+    "kind": "name",
+    "ea": "0x491770",
+    "name": "getFacilityIDFromPtr"
+  },
+  {
+    "kind": "name",
+    "ea": "0x495c20",
+    "name": "IsTroopAndFacilitySameForce"
+  },
+  {
+    "kind": "name",
+    "ea": "0x495c50",
+    "name": "IsFacilityAndTroopSameForce"
+  },
+  {
+    "kind": "name",
+    "ea": "0x496030",
+    "name": "GetCoordinatesForTroop"
+  },
+  {
+    "kind": "name",
+    "ea": "0x49cf50",
+    "name": "GetFacilityTypeFromUnit"
+  },
+  {
+    "kind": "name",
+    "ea": "0x49cfb0",
+    "name": "IsCivilFacilityCompletedForUnit"
+  },
+  {
+    "kind": "name",
+    "ea": "0x49dab0",
+    "name": "DoesCityHaveSpecificFacility"
+  },
+  {
+    "kind": "name",
+    "ea": "0x49dd30",
+    "name": "IsFacilitySpecificType"
+  },
+  {
+    "kind": "name",
+    "ea": "0x49e450",
+    "name": "GetCityIDFromFacilityPtr"
+  },
+  {
+    "kind": "name",
+    "ea": "0x49e500",
+    "name": "IsSpecificFacilityNearCoordinate"
+  },
+  {
+    "kind": "name",
+    "ea": "0x4a31e0",
+    "name": "SetPersonFacility"
+  },
+  {
+    "kind": "name",
+    "ea": "0x4ae360",
+    "name": "FacilityRepairDurability"
+  },
+  {
+    "kind": "name",
+    "ea": "0x4b3ee0",
+    "name": "AdjustCityFacility"
+  },
+  {
+    "kind": "name",
+    "ea": "0x4b9840",
+    "name": "GetFacilityCombinedStrength"
+  },
+  {
+    "kind": "name",
+    "ea": "0x4c0b60",
+    "name": "GetCityFacilityCount"
+  },
+  {
+    "kind": "name",
+    "ea": "0x4c26e0",
+    "name": "CorpFacilityInfo"
+  },
+  {
+    "kind": "name",
+    "ea": "0x4cdd00",
+    "name": "ArrayFacility"
+  },
+  {
+    "kind": "name",
+    "ea": "0x4ced40",
+    "name": "SetupFacilityArray"
+  },
+  {
+    "kind": "name",
+    "ea": "0x4cf590",
+    "name": "GetPersonsByFacilityFilterCriteria"
+  },
+  {
+    "kind": "name",
+    "ea": "0x4cf600",
+    "name": "GetRecruitablePersonsByFacility"
+  },
+  {
+    "kind": "name",
+    "ea": "0x5a3300",
+    "name": "GetFacilityTypeIDWithTechnology"
+  },
+  {
+    "kind": "name",
+    "ea": "0x5a3440",
+    "name": "GetFacilityTypeIDWithTechnologyByTroop"
+  },
+  {
+    "kind": "name",
+    "ea": "0x5ae140",
+    "name": "GetFacilityDamage"
+  },
+  {
+    "kind": "name",
+    "ea": "0x5b0ee0",
+    "name": "GetFacilityDamage_5b0ee0"
+  },
+  {
+    "kind": "name",
+    "ea": "0x5b8180",
+    "name": "CheckFirstCorpOwnershipOfFacility"
+  },
+  {
+    "kind": "name",
+    "ea": "0x79b7f0",
+    "name": "FacilityTypeFuncAddr"
+  },
+  {
+    "kind": "name",
+    "ea": "0x79c718",
+    "name": "FacilityFuncAddr"
+  },
+  {
+    "kind": "name",
+    "ea": "0x7e60dc",
+    "name": "aHxismapobject"
+  },
+  {
+    "kind": "name",
+    "ea": "0x7e6110",
+    "name": "aHxmapobject"
+  },
+  {
+    "kind": "name",
+    "ea": "0x8ea5a8",
+    "name": "IsFacilityTypeFarm"
+  },
+  {
+    "kind": "name",
+    "ea": "0x6fb0e68",
+    "name": "struct_map_grid_ARRAY"
+  },
+  {
+    "kind": "name",
+    "ea": "0x727b5ac",
+    "name": "struct_facility_type_ARRAY"
+  },
+  {
+    "kind": "name",
+    "ea": "0x728b088",
+    "name": "struct_facility_ARRAY"
+  }
+]

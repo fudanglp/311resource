@@ -1,0 +1,494 @@
+[
+  {
+    "shadow_index": 0,
+    "shadow_name": "shadow00_castle_KAHOKU",
+    "symbol_ea": "0x77a4f4",
+    "symbol_name": "aShadow00Castle"
+  },
+  {
+    "shadow_index": 1,
+    "shadow_name": "shadow01_castle_CHUUGEN",
+    "symbol_ea": "0x77a4dc",
+    "symbol_name": "aShadow01Castle"
+  },
+  {
+    "shadow_index": 2,
+    "shadow_name": "shadow02_castle_SEIHOKU",
+    "symbol_ea": "0x77a4c4",
+    "symbol_name": "aShadow02Castle"
+  },
+  {
+    "shadow_index": 3,
+    "shadow_name": "shadow03_castle_KOUNAN",
+    "symbol_ea": "0x77a4ac",
+    "symbol_name": "aShadow03Castle"
+  },
+  {
+    "shadow_index": 4,
+    "shadow_name": "shadow04_castle_HASHOKU",
+    "symbol_ea": "0x77a494",
+    "symbol_name": "aShadow04Castle"
+  },
+  {
+    "shadow_index": 5,
+    "shadow_name": "shadow05_castle_NANBAN",
+    "symbol_ea": "0x77a47c",
+    "symbol_name": "aShadow05Castle"
+  },
+  {
+    "shadow_index": 6,
+    "shadow_name": "shadow06_gate",
+    "symbol_ea": "0x77a46c",
+    "symbol_name": "aShadow06Gate"
+  },
+  {
+    "shadow_index": 7,
+    "shadow_name": "shadow07_port",
+    "symbol_ea": "0x77a45c",
+    "symbol_name": "aShadow07Port"
+  },
+  {
+    "shadow_index": 8,
+    "shadow_name": "shadow08_base",
+    "symbol_ea": "0x77a44c",
+    "symbol_name": "aShadow08Base"
+  },
+  {
+    "shadow_index": 9,
+    "shadow_name": "shadow09_den",
+    "symbol_ea": "0x77a43c",
+    "symbol_name": "aShadow09Den"
+  },
+  {
+    "shadow_index": 10,
+    "shadow_name": "shadow10_camp",
+    "symbol_ea": "0x77a42c",
+    "symbol_name": "aShadow10Camp"
+  },
+  {
+    "shadow_index": 11,
+    "shadow_name": "shadow11_outpost",
+    "symbol_ea": "0x77a418",
+    "symbol_name": "aShadow11Outpos"
+  },
+  {
+    "shadow_index": 12,
+    "shadow_name": "shadow12_fort",
+    "symbol_ea": "0x77a408",
+    "symbol_name": "aShadow12Fort"
+  },
+  {
+    "shadow_index": 13,
+    "shadow_name": "shadow13_golems",
+    "symbol_ea": "0x77a3f8",
+    "symbol_name": "aShadow13Golems"
+  },
+  {
+    "shadow_index": 14,
+    "shadow_name": "shadow14_greatwall",
+    "symbol_ea": "0x77a3e4",
+    "symbol_name": "aShadow14Greatw"
+  },
+  {
+    "shadow_index": 15,
+    "shadow_name": "shadow15_relic",
+    "symbol_ea": "0x77a3d4",
+    "symbol_name": "aShadow15Relic"
+  },
+  {
+    "shadow_index": 16,
+    "shadow_name": "shadow16_shrine",
+    "symbol_ea": "0x77a3c4",
+    "symbol_name": "aShadow16Shrine"
+  },
+  {
+    "shadow_index": 17,
+    "shadow_name": "shadow17_barricade",
+    "symbol_ea": "0x77a3b0",
+    "symbol_name": "aShadow17Barric"
+  },
+  {
+    "shadow_index": 18,
+    "shadow_name": "shadow18_landslide",
+    "symbol_ea": "0x77a39c",
+    "symbol_name": "aShadow18Landsl"
+  },
+  {
+    "shadow_index": 19,
+    "shadow_name": "shadow19_bronze_pheasant_tower",
+    "symbol_ea": "0x77a37c",
+    "symbol_name": "aShadow19Bronze"
+  },
+  {
+    "shadow_index": 20,
+    "shadow_name": "shadow20_levee",
+    "symbol_ea": "0x77a36c",
+    "symbol_name": "aShadow20Levee"
+  },
+  {
+    "shadow_index": 21,
+    "shadow_name": "shadow21_rockfall",
+    "symbol_ea": "0x77a358",
+    "symbol_name": "aShadow21Rockfa"
+  },
+  {
+    "shadow_index": 22,
+    "shadow_name": "shadow22_KYUUSAIKOU",
+    "symbol_ea": "0x77a344",
+    "symbol_name": "aShadow22Kyuusa"
+  },
+  {
+    "shadow_index": 23,
+    "shadow_name": "shadow23_market",
+    "symbol_ea": "0x77a334",
+    "symbol_name": "aShadow23Market"
+  },
+  {
+    "shadow_index": 24,
+    "shadow_name": "shadow24_farm",
+    "symbol_ea": "0x77a324",
+    "symbol_name": "aShadow24Farm"
+  },
+  {
+    "shadow_index": 25,
+    "shadow_name": "shadow25_barrack",
+    "symbol_ea": "0x77a310",
+    "symbol_name": "aShadow25Barrac"
+  },
+  {
+    "shadow_index": 26,
+    "shadow_name": "shadow26_blacksmith",
+    "symbol_ea": "0x77a2fc",
+    "symbol_name": "aShadow26Blacks"
+  },
+  {
+    "shadow_index": 27,
+    "shadow_name": "shadow27_garner",
+    "symbol_ea": "0x77a2ec",
+    "symbol_name": "aShadow27Garner"
+  },
+  {
+    "shadow_index": 28,
+    "shadow_name": "shadow28_wall",
+    "symbol_ea": "0x77a2dc",
+    "symbol_name": "aShadow28Wall"
+  },
+  {
+    "shadow_index": 29,
+    "shadow_name": "shadow29_fire",
+    "symbol_ea": "0x77a2cc",
+    "symbol_name": "aShadow29Fire"
+  },
+  {
+    "shadow_index": 30,
+    "shadow_name": "shadow30_hellfire",
+    "symbol_ea": "0x77a2b8",
+    "symbol_name": "aShadow30Hellfi"
+  },
+  {
+    "shadow_index": 31,
+    "shadow_name": "shadow31_fireship",
+    "symbol_ea": "0x77a2a4",
+    "symbol_name": "aShadow31Firesh"
+  },
+  {
+    "shadow_index": 32,
+    "shadow_name": "shadow32_stable",
+    "symbol_ea": "0x77a294",
+    "symbol_name": "aShadow32Stable"
+  },
+  {
+    "shadow_index": 33,
+    "shadow_name": "shadow33_arsenal",
+    "symbol_ea": "0x77a280",
+    "symbol_name": "aShadow33Arsena"
+  },
+  {
+    "shadow_index": 34,
+    "shadow_name": "shadow34_dockyard",
+    "symbol_ea": "0x77a26c",
+    "symbol_name": "aShadow34Dockya"
+  },
+  {
+    "shadow_index": 35,
+    "shadow_name": "shadow35_ballista_tower",
+    "symbol_ea": "0x77a254",
+    "symbol_name": "aShadow35Ballis"
+  },
+  {
+    "shadow_index": 36,
+    "shadow_name": "shadow36_mint",
+    "symbol_ea": "0x77a244",
+    "symbol_name": "aShadow36Mint"
+  },
+  {
+    "shadow_index": 37,
+    "shadow_name": "shadow37_drum_tower",
+    "symbol_ea": "0x77a230",
+    "symbol_name": "aShadow37DrumTo"
+  },
+  {
+    "shadow_index": 38,
+    "shadow_name": "shadow38_band_tower",
+    "symbol_ea": "0x77a21c",
+    "symbol_name": "aShadow38BandTo"
+  },
+  {
+    "shadow_index": 39,
+    "shadow_name": "shadow39_fireball",
+    "symbol_ea": "0x77a208",
+    "symbol_name": "aShadow39Fireba"
+  },
+  {
+    "shadow_index": 40,
+    "shadow_name": "shadow40_hellfireball",
+    "symbol_ea": "0x77a1f0",
+    "symbol_name": "aShadow40Hellfi"
+  },
+  {
+    "shadow_index": 41,
+    "shadow_name": "shadow41_firewagon",
+    "symbol_ea": "0x77a1dc",
+    "symbol_name": "aShadow41Firewa"
+  },
+  {
+    "shadow_index": 42,
+    "shadow_name": "shadow42_flame",
+    "symbol_ea": "0x77a1cc",
+    "symbol_name": "aShadow42Flame"
+  },
+  {
+    "shadow_index": 43,
+    "shadow_name": "shadow43_tower",
+    "symbol_ea": "0x77a1bc",
+    "symbol_name": "aShadow43Tower"
+  },
+  {
+    "shadow_index": 44,
+    "shadow_name": "shadow44_catapult_tower",
+    "symbol_ea": "0x77a1a4",
+    "symbol_name": "aShadow44Catapu"
+  },
+  {
+    "shadow_index": 45,
+    "shadow_name": "shadow45_tree00",
+    "symbol_ea": "0x77a17c",
+    "symbol_name": "aShadow45Tree00"
+  },
+  {
+    "shadow_index": 46,
+    "shadow_name": "shadow46_tree01",
+    "symbol_ea": "0x77a16c",
+    "symbol_name": "aShadow46Tree01"
+  },
+  {
+    "shadow_index": 47,
+    "shadow_name": "shadow47_tree02",
+    "symbol_ea": "0x77a15c",
+    "symbol_name": "aShadow47Tree02"
+  },
+  {
+    "shadow_index": 48,
+    "shadow_name": "shadow48_tree03",
+    "symbol_ea": "0x77a14c",
+    "symbol_name": "aShadow48Tree03"
+  },
+  {
+    "shadow_index": 49,
+    "shadow_name": "shadow49_tree04",
+    "symbol_ea": "0x77a13c",
+    "symbol_name": "aShadow49Tree04"
+  },
+  {
+    "shadow_index": 50,
+    "shadow_name": "shadow50_tree05",
+    "symbol_ea": "0x77a12c",
+    "symbol_name": "aShadow50Tree05"
+  },
+  {
+    "shadow_index": 51,
+    "shadow_name": "shadow51_tree06",
+    "symbol_ea": "0x77a11c",
+    "symbol_name": "aShadow51Tree06"
+  },
+  {
+    "shadow_index": 52,
+    "shadow_name": "shadow52_tree07",
+    "symbol_ea": "0x77a10c",
+    "symbol_name": "aShadow52Tree07"
+  },
+  {
+    "shadow_index": 53,
+    "shadow_name": "shadow53_tree08",
+    "symbol_ea": "0x77a0fc",
+    "symbol_name": "aShadow53Tree08"
+  },
+  {
+    "shadow_index": 54,
+    "shadow_name": "shadow54_tree09",
+    "symbol_ea": "0x77a0ec",
+    "symbol_name": "aShadow54Tree09"
+  },
+  {
+    "shadow_index": 55,
+    "shadow_name": "shadow55_tree10",
+    "symbol_ea": "0x77a0dc",
+    "symbol_name": "aShadow55Tree10"
+  },
+  {
+    "shadow_index": 56,
+    "shadow_name": "shadow56_tree11",
+    "symbol_ea": "0x77a0cc",
+    "symbol_name": "aShadow56Tree11"
+  },
+  {
+    "shadow_index": 57,
+    "shadow_name": "shadow57_tree12",
+    "symbol_ea": "0x77a0bc",
+    "symbol_name": "aShadow57Tree12"
+  },
+  {
+    "shadow_index": 58,
+    "shadow_name": "shadow58_tree13",
+    "symbol_ea": "0x77a0ac",
+    "symbol_name": "aShadow58Tree13"
+  },
+  {
+    "shadow_index": 59,
+    "shadow_name": "shadow59_tree14",
+    "symbol_ea": "0x77a09c",
+    "symbol_name": "aShadow59Tree14"
+  },
+  {
+    "shadow_index": 60,
+    "shadow_name": "shadow60_tree15",
+    "symbol_ea": "0x77a08c",
+    "symbol_name": "aShadow60Tree15"
+  },
+  {
+    "shadow_index": 61,
+    "shadow_name": "shadow61_candidate_site",
+    "symbol_ea": "0x77a18c",
+    "symbol_name": "aShadow61Candid"
+  },
+  {
+    "shadow_index": 62,
+    "shadow_name": "shadow62_tally_office",
+    "symbol_ea": "0x77a074",
+    "symbol_name": "aShadow62TallyO"
+  },
+  {
+    "shadow_index": 63,
+    "shadow_name": "shadow63_military_office",
+    "symbol_ea": "0x77a058",
+    "symbol_name": "aShadow63Milita"
+  },
+  {
+    "shadow_index": 64,
+    "shadow_name": "shadow64_personnel_office",
+    "symbol_ea": "0x77a03c",
+    "symbol_name": "aShadow64Person"
+  },
+  {
+    "shadow_index": 65,
+    "shadow_name": "shadow65_diplomatic_office",
+    "symbol_ea": "0x77a020",
+    "symbol_name": "aShadow65Diplom"
+  },
+  {
+    "shadow_index": 66,
+    "shadow_name": "shadow66_strategem_office",
+    "symbol_ea": "0x77a004",
+    "symbol_name": "aShadow66Strate"
+  },
+  {
+    "shadow_index": 67,
+    "shadow_name": "shadow67_training_school",
+    "symbol_ea": "0x779fe8",
+    "symbol_name": "aShadow67Traini"
+  },
+  {
+    "shadow_index": 68,
+    "shadow_name": "shadow68_central_market",
+    "symbol_ea": "0x779fd0",
+    "symbol_name": "aShadow68Centra"
+  },
+  {
+    "shadow_index": 69,
+    "shadow_name": "shadow69_fish_market",
+    "symbol_ea": "0x779fb8",
+    "symbol_name": "aShadow69FishMa"
+  },
+  {
+    "shadow_index": 70,
+    "shadow_name": "shadow70_black_market",
+    "symbol_ea": "0x779fa0",
+    "symbol_name": "aShadow70BlackM"
+  },
+  {
+    "shadow_index": 71,
+    "shadow_name": "shadow71_military_farm",
+    "symbol_ea": "0x779f88",
+    "symbol_name": "aShadow71Milita"
+  },
+  {
+    "shadow_index": 72,
+    "shadow_name": "shadow72_market_lv2",
+    "symbol_ea": "0x779f74",
+    "symbol_name": "aShadow72Market"
+  },
+  {
+    "shadow_index": 73,
+    "shadow_name": "shadow73_farm_lv2",
+    "symbol_ea": "0x779f60",
+    "symbol_name": "aShadow73FarmLv"
+  },
+  {
+    "shadow_index": 74,
+    "shadow_name": "shadow74_barrack_lv2",
+    "symbol_ea": "0x779f48",
+    "symbol_name": "aShadow74Barrac"
+  },
+  {
+    "shadow_index": 75,
+    "shadow_name": "shadow75_blacksmith_lv2",
+    "symbol_ea": "0x779f30",
+    "symbol_name": "aShadow75Blacks"
+  },
+  {
+    "shadow_index": 76,
+    "shadow_name": "shadow76_stable_lv2",
+    "symbol_ea": "0x779f1c",
+    "symbol_name": "aShadow76Stable"
+  },
+  {
+    "shadow_index": 77,
+    "shadow_name": "shadow77_market_lv3",
+    "symbol_ea": "0x779f08",
+    "symbol_name": "aShadow77Market"
+  },
+  {
+    "shadow_index": 78,
+    "shadow_name": "shadow78_farm_lv3",
+    "symbol_ea": "0x779ef4",
+    "symbol_name": "aShadow78FarmLv"
+  },
+  {
+    "shadow_index": 79,
+    "shadow_name": "shadow79_barrack_lv3",
+    "symbol_ea": "0x779edc",
+    "symbol_name": "aShadow79Barrac"
+  },
+  {
+    "shadow_index": 80,
+    "shadow_name": "shadow80_blacksmith_lv3",
+    "symbol_ea": "0x779ec4",
+    "symbol_name": "aShadow80Blacks"
+  },
+  {
+    "shadow_index": 81,
+    "shadow_name": "shadow81_stable_lv3",
+    "symbol_ea": "0x779eb0",
+    "symbol_name": "aShadow81Stable"
+  }
+]

@@ -76,6 +76,14 @@ uv run python -m san11resource.ida.export_python_idb
 
 默认读取本地 `ida/input/*.idb`，输出到 `ida/data/python_idb/`。这两个目录中的 IDB 和导出数据只用于本地分析，不进 git。
 
+从 IDA 导出数据和本地提取结果生成资源解析线索：
+
+```bash
+uv run python -m san11resource.ida.build_resource_hints
+```
+
+输出到 `ida/data/resource_hints/`，包括 `OBJS0004` 的 object type / shadow 名称候选映射、`SHEX0008` 和运行时地图格子结构对照、`struct_person` / `struct_skill` 字段 catalog。
+
 ## 验证
 
 ```bash

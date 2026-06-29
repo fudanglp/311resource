@@ -1,0 +1,6 @@
+struct,offset,member,comment,repeatable_comment,typeinfo_hex
+struc_map_grid,0x0,field_0,,,0700
+struc_map_grid,0x4,field_4,,,
+struc_map_grid,0x8,field_8,,,
+struc_map_grid,0xc,field_C,,,
+struc_map_grid,0x10,field_10,,,

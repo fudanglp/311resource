@@ -1,0 +1,7 @@
+struct,offset,size_guess,field,label,comment,repeatable_comment,typeinfo_hex
+struct_skill,0x0,4,fld_0_SkillFuncAddr,SkillFuncAddr,,特技相关函数所在地址(0C C9 79 00),
+struct_skill,0x4,24,fld_4_SkillName,SkillName,,特技名称,
+struct_skill,0x1c,68,fld_1C_SkillDescription,SkillDescription,,特技描述,
+struct_skill,0x60,4,fld_60_SkillLevel,SkillLevel,,特技等级,0400
+struct_skill,0x64,4,fld_64_SkillType,SkillType,,特技类型,0400
+struct_skill,0x68,,fld_68_Unknown,Unknown,,,0400

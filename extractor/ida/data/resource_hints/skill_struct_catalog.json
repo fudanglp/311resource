@@ -1,0 +1,62 @@
+[
+  {
+    "struct": "struct_skill",
+    "offset": "0x0",
+    "size_guess": "4",
+    "field": "fld_0_SkillFuncAddr",
+    "label": "SkillFuncAddr",
+    "comment": "",
+    "repeatable_comment": "特技相关函数所在地址(0C C9 79 00)",
+    "typeinfo_hex": ""
+  },
+  {
+    "struct": "struct_skill",
+    "offset": "0x4",
+    "size_guess": "24",
+    "field": "fld_4_SkillName",
+    "label": "SkillName",
+    "comment": "",
+    "repeatable_comment": "特技名称",
+    "typeinfo_hex": ""
+  },
+  {
+    "struct": "struct_skill",
+    "offset": "0x1c",
+    "size_guess": "68",
+    "field": "fld_1C_SkillDescription",
+    "label": "SkillDescription",
+    "comment": "",
+    "repeatable_comment": "特技描述",
+    "typeinfo_hex": ""
+  },
+  {
+    "struct": "struct_skill",
+    "offset": "0x60",
+    "size_guess": "4",
+    "field": "fld_60_SkillLevel",
+    "label": "SkillLevel",
+    "comment": "",
+    "repeatable_comment": "特技等级",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_skill",
+    "offset": "0x64",
+    "size_guess": "4",
+    "field": "fld_64_SkillType",
+    "label": "SkillType",
+    "comment": "",
+    "repeatable_comment": "特技类型",
+    "typeinfo_hex": "0400"
+  },
+  {
+    "struct": "struct_skill",
+    "offset": "0x68",
+    "size_guess": "",
+    "field": "fld_68_Unknown",
+    "label": "Unknown",
+    "comment": "",
+    "repeatable_comment": "",
+    "typeinfo_hex": "0400"
+  }
+]
