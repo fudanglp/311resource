@@ -1,0 +1,21 @@
+Copyright and content notice
+============================
+
+This repository contains research notes and extraction tools for local
+Sangokushi XI / San11 resource analysis. It does not include or distribute
+Koei Tecmo game files, extracted assets, portraits, textures, models, maps,
+audio, video, or other copyrighted game content.
+
+Users must provide their own legally obtained copy of the game. Local input
+and generated output directories such as `game/`, `extracted/`, and `scratch/`
+are intentionally excluded from version control and should not be uploaded to
+this repository, release artifacts, package distributions, container images,
+or hosted viewer deployments.
+
+The tools are intended for local research, documentation, interoperability,
+and personal inspection. Do not use this project to distribute copyrighted game
+content, avoid purchasing or owning the game, or bypass access controls.
+
+KOEI, Koei Tecmo, Sangokushi, San11, and related names or assets belong to
+their respective owners. This project is not affiliated with or endorsed by
+Koei Tecmo.

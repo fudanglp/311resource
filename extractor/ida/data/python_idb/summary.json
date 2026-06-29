@@ -1,0 +1,11 @@
+[
+  {
+    "source": "san11pk_dump.exe.idb",
+    "path": "/home/glp/311resource/extractor/ida/input/san11pk_dump.exe.idb",
+    "size": 699534720,
+    "functions": 17833,
+    "names": 18050,
+    "structs": 89,
+    "struct_members": 684
+  }
+]

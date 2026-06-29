@@ -29,6 +29,7 @@ san11resource.model/       WKMD 模型导出
 san11resource.aimg/        AIMG 图集/精灵元数据
 san11resource.map/         SHEX/GCOL/K3ST/OBJS 地图资源分析
 san11resource.recognized/  KOVS/FCVD/KSEF/TOD/NUNO 等已识别格式继续逆向
+san11resource.ida/         本地 IDB 辅助导出，读取函数、名字、结构体和结构成员
 ```
 
 ## 常用命令
@@ -65,6 +66,15 @@ uv run python -m san11resource.map.export_shex
 uv run python -m san11resource.map.analyze_map_candidates
 uv run python -m san11resource.recognized.analyze_recognized
 ```
+
+IDA 辅助脚本使用独立依赖组：
+
+```bash
+uv sync --group ida
+uv run python -m san11resource.ida.export_python_idb
+```
+
+默认读取本地 `ida/input/*.idb`，输出到 `ida/data/python_idb/`。这两个目录中的 IDB 和导出数据只用于本地分析，不进 git。
 
 ## 验证
 

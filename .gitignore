@@ -9,6 +9,21 @@ game/
 extracted/
 scratch/
 
+# Local IDA databases and compressed IDB inputs.
+extractor/ida/input/*
+!extractor/ida/input/.gitkeep
+extractor/ida/data/*
+!extractor/ida/data/python_idb/
+!extractor/ida/data/python_idb/**
+*.idb
+*.i64
+*.id0
+*.id1
+*.nam
+*.til
+*.idb.zip
+*.idb.7z
+
 # OS/editor noise.
 .DS_Store
 *.swp

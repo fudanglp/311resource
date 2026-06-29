@@ -23,6 +23,12 @@ scratch/    临时实验区，已被 .gitignore 忽略
 
 `extracted/` 保存当前提取结果。目录较大，暂时不进 git；后续可以按需要迁移到 Git LFS、release artifact 或单独对象存储。
 
+## 版权边界
+
+本仓库只保存研究文档和提取工具，不包含也不分发 KOEI/Koei Tecmo 游戏文件、导出图片、模型、地图、音视频或其他版权内容。使用者需要自行提供合法取得的本地游戏副本。
+
+`game/`、`extracted/` 和 `scratch/` 都是本地目录，已从版本控制中排除；不要把这些目录上传到仓库、release、包分发、容器镜像或托管 viewer。详细说明见 [NOTICE](NOTICE)。
+
 ## 本地数据
 
 `game/` 和 `extracted/` 不进 git：

@@ -19,6 +19,9 @@ dev = [
   "pytest>=8",
   "ruff>=0.5",
 ]
+ida = [
+  "python-idb>=0.7",
+]
 
 [build-system]
 requires = ["hatchling"]
