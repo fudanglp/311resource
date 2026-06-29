@@ -279,10 +279,21 @@ It is probably wrong to expect each logical map grid to have its own standalone
 3D model. A better hypothesis is:
 
 - grid data controls terrain class, movement, facility ownership, and map logic;
-- stage files and renderer buffers define continuous terrain surfaces;
+- stage files, `K3ST0006` channel data, and renderer buffers define continuous
+  terrain surfaces;
+- the in-game world map is a 3D stage: the northwest mountain region and
+  southeast sea region should be treated as validation constraints for terrain
+  height/channel interpretation;
 - `object.sto` places discrete objects such as cities, ports, gates, facilities,
   trees, hazards, and special sites;
 - object `type` then selects a named stage model/texture family.
+
+The strongest current terrain-surface clue is `K3ST0006 map_c0`: it shows
+high-frequency mountain/relief structure in the northwest and large dark
+regions toward the southeast, matching the visible world-map composition better
+than `SHEX b01` alone. `SHEX b01` still forms a map-shaped low-resolution field,
+but its 0..92 range looks more like a region/material/height-layer index than a
+direct high-resolution height map.
 
 ## Next investigation targets
 

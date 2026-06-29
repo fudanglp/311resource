@@ -1,4 +1,12 @@
-import { Link, Outlet, RouterProvider, createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
+import {
+  Link,
+  Outlet,
+  RouterProvider,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  useRouterState
+} from "@tanstack/react-router";
 import { Boxes, Bug, Cuboid, Database, Image, Layers, Map, Mountain, Search } from "lucide-react";
 import React from "react";
 import ReactDOM from "react-dom/client";
@@ -10,13 +18,17 @@ import { DebugPage } from "./pages/DebugPage";
 import { MapObjectsPage } from "./pages/MapObjectsPage";
 import { ModelsPage } from "./pages/ModelsPage";
 import { OverviewPage } from "./pages/OverviewPage";
+import { TerrainMapPage } from "./pages/TerrainMapPage";
 import { WorldMapPage } from "./pages/WorldMapPage";
 import "./styles.css";
 
 function AppLayout() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const isImmersive = pathname === "/map/3d";
   const navItems = [
     { to: "/", label: "概览", icon: Database },
     { to: "/map", label: "世界地图", icon: Map },
+    { to: "/map/3d", label: "3D 世界地图", icon: Cuboid },
     { to: "/map/objects", label: "地图对象", icon: Mountain },
     { to: "/assets", label: "图像资产", icon: Image },
     { to: "/models", label: "3D 模型", icon: Cuboid },
@@ -78,7 +90,7 @@ function AppLayout() {
             local only
           </Badge>
         </header>
-        <main className={cn("mx-auto w-full max-w-[1500px] px-4 py-5")}>
+        <main className={cn("mx-auto w-full", isImmersive ? "h-[calc(100vh-3.5rem)] max-w-none p-0" : "max-w-[1500px] px-4 py-5")}>
           <Outlet />
         </main>
       </div>
@@ -100,6 +112,12 @@ const worldMapRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/map",
   component: WorldMapPage
+});
+
+const terrainMapRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/map/3d",
+  component: TerrainMapPage
 });
 
 const mapObjectsRoute = createRoute({
@@ -132,7 +150,16 @@ const debugRoute = createRoute({
   component: DebugPage
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, worldMapRoute, mapObjectsRoute, assetsRoute, modelsRoute, aimgRoute, debugRoute]);
+const routeTree = rootRoute.addChildren([
+  indexRoute,
+  worldMapRoute,
+  terrainMapRoute,
+  mapObjectsRoute,
+  assetsRoute,
+  modelsRoute,
+  aimgRoute,
+  debugRoute
+]);
 const router = createRouter({ routeTree });
 
 declare module "@tanstack/react-router" {

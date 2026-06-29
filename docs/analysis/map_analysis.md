@@ -114,6 +114,17 @@ byte 12..13 未知，active record 中目前为 0
 
 `OBJS0004` 按 group/type 画出的散点图形成地图形状，因此很可能是地图对象摆放表。group/type 名称还需要和 exe 字符串继续关联，例如 `shadow*_castle`、`stable`、`blacksmith`、树木和设施名等。
 
+## 3D 世界地图约束
+
+游戏实际渲染中的世界地图是 3D 场景：西北方向有明显高山，东南方向有大片海面。这使地图资源不能只按 2D 预览图理解。当前更合理的模型是：
+
+- `SHEX0008` 提供 `200 x 200` 逻辑格子、地形/移动分类和若干低分辨率索引字段；
+- `K3ST0006` 的 `2049 x 2049` 四通道数据提供更高分辨率的地形/通道贴图，其中 `map_c0` 已能看到西北大片高频山脉/坡面纹理，东南大面积暗区则可能对应海面、水域 mask 或不可通行区域；
+- `GCOL0001` 更像季节/颜色预览或颜色层，不适合作为权威 grid 数据；
+- `default.stg` 附近的 data-buffer/descriptor pair 目前只暴露 `2`/`4` 字节 stream，形态更像分批索引、短属性或渲染辅助流，而不是直接未压缩顶点 position buffer。
+
+exe 字符串中存在 `ShowGroundWireframe`、`ShowGroundPolygon`、`ShowWater`、`ShowDistantView`、`ViewHeight`、`WaterAnimTime`、`WaterRepetition` 等 stage/debug 配置名，进一步说明世界地图渲染层包含 ground polygon、水面和 distant view。后续需要用 IDA xref 确认这些配置读写的具体渲染函数，再反推 `default.stg`、`K3ST0006` 和 ground/water 贴图的绑定关系。
+
 IDA 线索补充：
 
 - `san11pk_dump.exe.idb` 中可提取 82 个 `shadowNN_*` 字符串，覆盖城、关、港、市场、农场、锻造、马厩、树木等对象影子名。
