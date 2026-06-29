@@ -3,6 +3,8 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .venv/
+node_modules/
+dist/
 
 # Local game install and generated reverse-engineering output.
 game/

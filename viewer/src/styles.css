@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 20% 98%;
+    --foreground: 224 22% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 22% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 22% 12%;
+    --primary: 192 72% 25%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 42 38% 90%;
+    --secondary-foreground: 35 36% 20%;
+    --muted: 210 18% 94%;
+    --muted-foreground: 218 12% 42%;
+    --accent: 171 26% 90%;
+    --accent-foreground: 186 48% 20%;
+    --destructive: 0 72% 44%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 215 16% 84%;
+    --input: 215 16% 84%;
+    --ring: 192 72% 32%;
+    --radius: 0.5rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    letter-spacing: 0;
+  }
+}
+
+@layer components {
+  .workbench-title {
+    @apply text-xl font-semibold tracking-normal;
+  }
+
+  .workbench-subtitle {
+    @apply mt-1 max-w-3xl text-sm text-muted-foreground;
+  }
+
+  .table-dense {
+    @apply w-full border-collapse text-sm;
+  }
+
+  .table-dense th {
+    @apply border-b bg-muted/50 px-3 py-2 text-left text-xs font-medium text-muted-foreground;
+  }
+
+  .table-dense td {
+    @apply border-b px-3 py-2 align-middle;
+  }
+
+  .mono-cell {
+    @apply font-mono text-xs;
+  }
+}
