@@ -11,6 +11,7 @@
 - `analysis/model_wkmd_analysis.md`：`WKMD0010` 模型块、OBJ 导出、part/submesh、贴图绑定和蒙皮权重观察。
 - `analysis/aimg_analysis.md`：`AIMG0001` 图集/精灵元数据、slot/record 结构和 overlay 观察。
 - `analysis/map_analysis.md`：`SHEX0008`、`GCOL0001`、`K3ST0006`、`OBJS0004` 地图资源簇、200x200 格子和半格错位坐标。
+- `analysis/stage_asset_mapping.md`：`media/stage/...` 虚拟路径、地图 stage 数据、对象表、模型/贴图资源与 LINK entry 的待验证映射。
 - `analysis/recognized_formats_analysis.md`：`KOVS*`、`FCVD0022`、`KSEF0131`、`TOD20053`、`NUNO0220` 等已识别但仍需继续逆向的格式。
 - `analysis/ida_resource_hints.md`：从 `san11pk_dump.exe.idb` 导出的函数、结构体、shadow 名称、地图格子和人物/特技 catalog 线索。
 
@@ -37,6 +38,7 @@ bebdf98d8c2efe16efe6d1f4a342a6e8249a5282  game/San11WPK/media/san11res1.bin
 | `GCOL0001` | `structurally parsed` | `analysis/map_analysis.md` |
 | `K3ST0006` | `structurally parsed` | `analysis/map_analysis.md` |
 | `OBJS0004` | `structurally parsed` | `analysis/map_analysis.md` |
+| stage asset path mapping | `supporting evidence` | `analysis/stage_asset_mapping.md` |
 | data-buffer/descriptor pair | `structurally parsed` | `analysis/resource_bin_analysis.md`, `analysis/map_analysis.md` |
 | `FCVD0022` | `structurally parsed` | `analysis/recognized_formats_analysis.md` |
 | `KSEF0131` | `structurally parsed` | `analysis/recognized_formats_analysis.md` |
