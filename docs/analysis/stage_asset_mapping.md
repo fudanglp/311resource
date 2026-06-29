@@ -352,11 +352,13 @@ It is probably wrong to expect each logical map grid to have its own standalone
 
 The strongest current terrain-surface clue is `K3ST control_b00`: it keeps
 rivers and sea low while preserving mountain/highland structure, and IDB
-evidence shows it is sampled as a terrain height/control byte. The b01/b02/b03
-triplet is now the strongest terrain-color clue, with `b02` acting as the
-diffuse green/brightness component. The exporter writes this triplet as
-`control_diffuse_b01_b02_b03`, which should be treated as a color layer rather
-than a height source. Water and river cells branch to `derived_b07`.
+evidence shows it is sampled as a terrain height/control byte. Runtime record
+bytes `+1/+2/+3` are the strongest terrain-color clue. K3ST initializes those
+bytes, but the seasonal `GCOL0001` parser overwrites the same offsets with
+`color_*.sea` RGB before the ground draw helper packs them as D3D diffuse. The
+exporter writes the raw K3ST triplet as `control_diffuse_b01_b02_b03`, which
+should be treated as a diagnostic color layer rather than the final seasonal
+diffuse. Water and river cells branch to `derived_b07`.
 `derived_b08` is a 4-bit corner mask comparing nearby `control_b00` values
 against `derived_b07`. `SHEX b01` still forms a map-shaped low-resolution
 field, but its `0..92` range looks more like a region/material/height-layer

@@ -128,7 +128,7 @@ byte 12..13 未知，active record 中目前为 0
 
 - `SHEX0008` 提供 `200 x 200` 逻辑格子、地形/移动分类和若干低分辨率索引字段；
 - `K3ST0006` 是 `default.stg` 的强候选，承载 3D stage 地形控制数据。`control_b00` 不只是视觉代理：`sub_418fb0` 会把原始 `control_b00` 展开到 `this+0x800008+index*10`，`sub_415bb0/4163b0` 直接读取这个 byte 并用 `0.5` 缩放，`sub_41f5f0` 的 ground draw path 又通过 `41dcb0/41e7a0/41eb60` 读取同一运行时 record 生成顶点后调用 `DrawIndexedPrimitive`。`0x4176b0/0x417770` 的已知调用点传入 `this+8`，因此它的 `ecx+0x800000+index*10` 也落到展开后的 `control_b00`；
-- `control_b01..b03` 更像 terrain diffuse color。`sub_41dc00` 对地形 record 指针打包 `[+1]`、`[+2]`、`[+3]` 为 `alpha<<24 | b01<<16 | b02<<8 | b03`，并在某些 flag 下对三个分量统一减亮度。因此 `control_b02` 从代码上看是 diffuse green/brightness 分量，而不是高度；
+- `control_b01..b03` 对应 runtime terrain diffuse RGB。`sub_41dc00` 对地形 record 指针打包 `[+1]`、`[+2]`、`[+3]` 为 `alpha<<24 | b01<<16 | b02<<8 | b03`，并在某些 flag 下对三个分量统一减亮度。需要注意：`sub_418fb0` 解析 `K3ST0006` 时会初始化这些字节，但季节 `GCOL0001` parser `0x4191f0` 会把 `color_*.sea` 的 `1025x1025x3` RGB 写回同一 runtime record 的 `+1/+2/+3`。因此正常加载后最终 diffuse RGB 更应看作 GCOL 覆盖后的 runtime 字节，而不是纯原始 K3ST 通道；
 - K3ST 后半 8MB 在 IDB 中按 `1024x1024` 个 qword bitfield 使用，而不是按 `2048x2048` u16 高度图使用。`0x415e20` 从每个 `4x4` qword block 中提取派生表，`derived_b07` 是水/河高度分支读取的 byte，`derived_b08` 是 `0x415d80` 对四角 `control_b00` 与该高度比较得到的 4-bit mask；
 - `aux_qword_b05` 视觉上非常像水域 mask：水/河/海区域值高，其他区域接近 0。但 IDB 没有按 byte 5 直接读取它。`0x415e20` 通过 qword shift helper 读取 `bits44..51` 作为水/河高度字段，并读取 `bits52..53` 写入派生表 flags；`bits44..51` 跨过 `b05` 高 nibble 和 `b06` 低 nibble。因此 `aux_qword_b05` 只能当 raw bitfield byte 观察，真正可命名字段是导出器的 `aux_bits44_51_water_height`、`aux_bits44_51_has_water` 和 `aux_bits52_53_water_flags`；
 - `GCOL0001` 更像季节/颜色预览或颜色层，不适合作为权威 grid 数据；
@@ -141,7 +141,7 @@ byte 12..13 未知，active record 中目前为 0
 - `SHEX0008` 在 `(125,65)` 的字段为 `b00=0,b01=30,b04=6,b09=14`，相邻河/陆过渡格会在 `b00` 和 `b01` 上变化，例如 `(120,65)` 为 `b00=15,b01=29`、`(130,65)` 为 `b00=5,b01=30`。这说明低分辨率逻辑格子能直接标出“河”及其相邻过渡。
 - 按 IDB 的 `0x417770` 坐标换算，逻辑格 `(125,65)` 映射到 K3ST control 坐标约 `(614,376)`。该点附近 `control_b00=0`，符合河/水低洼的视觉直觉；但截图显示该格为“河”，而 IDB 在 `0x417770` 对 runtime 地形类型 `6..8` 有特殊分支：不取普通地面高度 byte，而是取另一个派生表的 byte+7，再乘 `0.5`。因此河/水高度不能只用普通地面高度图直接判断。
 
-当前结论：K3ST 不再只是“通道诊断图”，而是 `default.stg` 的核心 stage 数据。`control_b00` 是目前证据最强的地形高度/control byte；`control_b01..b03` 是 terrain diffuse color 候选，其中 `b02` 对应 green/brightness 分量；`aux_bits44_51_water_height` 是 `0x415e20` 消费的原始水/河高度 bitfield，`derived_b07` 是它按 `4x4` block 折叠后的运行时水/河高度来源。剩余问题是 control record 其他 byte 的语义、qword bitfield 的完整 bit layout，以及 terrain mesh 分块/材质生成过程。
+当前结论：K3ST 不再只是“通道诊断图”，而是 `default.stg` 的核心 stage 数据。`control_b00` 是目前证据最强的地形高度/control byte；runtime record 的 `+1/+2/+3` 是 terrain diffuse RGB，K3ST 会初始化它们，随后季节 GCOL 会覆盖它们；`aux_bits44_51_water_height` 是 `0x415e20` 消费的原始水/河高度 bitfield，`derived_b07` 是它按 `4x4` block 折叠后的运行时水/河高度来源。剩余问题是 control record 其他 byte 的语义、qword bitfield 的完整 bit layout，以及 terrain mesh 分块/材质生成过程。
 
 新的 IDB loader 约束：
 

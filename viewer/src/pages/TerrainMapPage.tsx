@@ -191,12 +191,12 @@ const terrainSize = 720;
 
 export function TerrainMapPage() {
   const [heightLayerId, setHeightLayerId] = useState(heightLayers[0].id);
-  const [colorLayerId, setColorLayerId] = useState("k3st-diffuse");
+  const [colorLayerId, setColorLayerId] = useState("gcol-summer-4789");
   const [groundTextureId, setGroundTextureId] = useState("ground-summer-4802");
   const [diagnosticLayerId, setDiagnosticLayerId] = useState(diagnosticLayers[0].id);
   const [diagnosticOpacity, setDiagnosticOpacity] = useState(45);
-  const [groundStrength, setGroundStrength] = useState(0);
-  const [heightScale, setHeightScale] = useState(12);
+  const [groundStrength, setGroundStrength] = useState(32);
+  const [heightScale, setHeightScale] = useState(14);
   const [heightBias, setHeightBias] = useState(0);
   const [seaLevel, setSeaLevel] = useState(0);
   const [wireframe, setWireframe] = useState(false);
@@ -233,7 +233,7 @@ export function TerrainMapPage() {
       />
 
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex flex-col gap-3 p-3 sm:p-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="pointer-events-auto max-w-[460px] rounded-md border border-white/50 bg-white/88 p-3 shadow-lg backdrop-blur">
+        <div className="pointer-events-auto hidden max-w-[460px] rounded-md border border-white/50 bg-white/88 p-3 shadow-lg backdrop-blur sm:block">
           <div className="flex items-center gap-2">
             <Mountain className="h-4 w-4 text-primary" />
             <h1 className="text-sm font-semibold">3D 世界地图</h1>
@@ -243,7 +243,7 @@ export function TerrainMapPage() {
           </p>
         </div>
 
-        <div className="pointer-events-auto grid max-h-[calc(100vh-15rem)] w-full max-w-[920px] gap-3 overflow-y-auto rounded-md border border-white/50 bg-white/88 p-3 shadow-lg backdrop-blur md:grid-cols-2 lg:max-h-none lg:overflow-visible xl:grid-cols-5">
+        <div className="pointer-events-auto grid max-h-[42vh] w-full max-w-[920px] gap-3 overflow-y-auto rounded-md border border-white/50 bg-white/88 p-3 shadow-lg backdrop-blur md:grid-cols-2 lg:max-h-none lg:overflow-visible xl:grid-cols-5">
           <ControlBlock label="高度源">
             <Select value={heightLayerId} onChange={(event) => setHeightLayerId(event.target.value)} className="w-full">
               {heightLayers.map((layer) => (
@@ -304,12 +304,12 @@ export function TerrainMapPage() {
                 variant="outline"
                 onClick={() => {
                   setHeightLayerId(heightLayers[0].id);
-                  setColorLayerId("k3st-diffuse");
+                  setColorLayerId("gcol-summer-4789");
                   setGroundTextureId("ground-summer-4802");
                   setDiagnosticLayerId(diagnosticLayers[0].id);
                   setDiagnosticOpacity(45);
-                  setGroundStrength(0);
-                  setHeightScale(12);
+                  setGroundStrength(32);
+                  setHeightScale(14);
                   setHeightBias(0);
                   setSeaLevel(0);
                   setShowSea(true);
@@ -655,8 +655,10 @@ const terrainFragmentShader = `
   uniform sampler2D colorMap;
   uniform sampler2D diagnosticMap;
   uniform sampler2D groundMap;
+  uniform sampler2D heightMap;
   uniform float diagnosticOpacity;
   uniform float groundStrength;
+  uniform float heightScale;
   uniform int showGrid;
 
   varying float vHeight;
@@ -695,6 +697,30 @@ const terrainFragmentShader = `
     return texture2D(atlas, atlasUv).rgb;
   }
 
+  float sampleHeight(vec2 uv) {
+    return texture2D(heightMap, clamp(uv, vec2(0.0), vec2(1.0))).r;
+  }
+
+  vec3 applyHeightShading(vec3 color, vec2 uv, float heightValue) {
+    vec2 texel = vec2(1.0 / 1025.0);
+    float hL = sampleHeight(uv - vec2(texel.x, 0.0));
+    float hR = sampleHeight(uv + vec2(texel.x, 0.0));
+    float hD = sampleHeight(uv - vec2(0.0, texel.y));
+    float hU = sampleHeight(uv + vec2(0.0, texel.y));
+    vec2 gradient = vec2(hR - hL, hU - hD) * heightScale;
+    float slope = clamp(length(gradient) * 1.35, 0.0, 1.0);
+    vec3 normal = normalize(vec3(-gradient.x, -gradient.y, 0.72));
+    vec3 lightDir = normalize(vec3(-0.42, 0.68, 0.58));
+    float light = dot(normal, lightDir);
+    float shade = mix(0.78, 1.17, smoothstep(-0.18, 0.72, light));
+    float highland = smoothstep(0.34, 0.82, heightValue);
+    vec3 ink = mix(vec3(0.40, 0.43, 0.36), vec3(0.72, 0.70, 0.60), highland);
+    color = mix(color, color * shade, 0.48);
+    color = mix(color, ink, slope * highland * 0.18);
+    color += slope * highland * vec3(0.055, 0.045, 0.03);
+    return color;
+  }
+
   float terrainGridMask(vec2 uv) {
     vec2 cell = fract(uv * 48.0);
     vec2 edge = min(cell, 1.0 - cell);
@@ -716,12 +742,13 @@ const terrainFragmentShader = `
     groundDetail = mix(groundDetail, groundFineDetail, fineWeight);
     float groundLuma = dot(groundDetail, vec3(0.299, 0.587, 0.114));
     vec3 groundTone = mix(vec3(groundLuma), groundDetail, 0.28);
-    vec3 detailMultiplier = mix(vec3(1.0), groundTone * 1.35, 0.42);
-    float detailWeight = groundStrength * mix(0.48, 0.82, fineWeight);
+    vec3 detailMultiplier = mix(vec3(1.0), groundTone * 1.28, 0.34);
+    float detailWeight = groundStrength * mix(0.36, 0.68, fineWeight);
     baseColor = mix(baseColor, baseColor * detailMultiplier, detailWeight);
-    baseColor += (groundLuma - 0.5) * groundStrength * 0.12;
+    baseColor += (groundLuma - 0.5) * groundStrength * 0.08;
 
-    float shade = mix(0.86, 1.08, smoothstep(0.08, 0.9, vHeight));
+    baseColor = applyHeightShading(baseColor, vUv, vHeight);
+    float shade = mix(0.88, 1.05, smoothstep(0.08, 0.9, vHeight));
     vec3 fogTint = vec3(0.82, 0.86, 0.80);
     vec3 color = mix(baseColor * shade, fogTint, 0.05);
     if (showGrid == 1) {
@@ -812,26 +839,40 @@ const waterFragmentShader = `
 
   varying vec2 vUv;
 
+  float smoothedWaterMask(vec2 uv) {
+    vec2 texel = vec2(1.0 / 1025.0);
+    float center = texture2D(waterMaskMap, uv).r;
+    float near = texture2D(waterMaskMap, uv + vec2(texel.x, 0.0)).r
+      + texture2D(waterMaskMap, uv - vec2(texel.x, 0.0)).r
+      + texture2D(waterMaskMap, uv + vec2(0.0, texel.y)).r
+      + texture2D(waterMaskMap, uv - vec2(0.0, texel.y)).r;
+    float far = texture2D(waterMaskMap, uv + vec2(texel.x, texel.y) * 2.0).r
+      + texture2D(waterMaskMap, uv + vec2(-texel.x, texel.y) * 2.0).r
+      + texture2D(waterMaskMap, uv + vec2(texel.x, -texel.y) * 2.0).r
+      + texture2D(waterMaskMap, uv + vec2(-texel.x, -texel.y) * 2.0).r;
+    return (center * 4.0 + near * 1.4 + far * 0.55) / 11.8;
+  }
+
   void main() {
-    float waterMaskValue = texture2D(waterMaskMap, vUv).r;
-    float waterMask = smoothstep(0.05, 0.22, waterMaskValue);
+    float waterMaskValue = smoothedWaterMask(vUv);
+    float waterMask = smoothstep(0.035, 0.34, waterMaskValue);
     if (waterMask <= 0.01) {
       discard;
     }
 
-    vec2 tiledUv = vUv * waterRepeat;
-    vec2 flow = vec2(time * waterSpeed * 0.18, time * waterSpeed * 0.11);
-    float waveA = sin((tiledUv.x + flow.x) * 6.28318);
-    float waveB = sin((tiledUv.y * 0.72 + tiledUv.x * 0.38 + flow.y) * 6.28318);
-    float waveC = sin((tiledUv.x * 1.7 - tiledUv.y * 1.25 + time * waterSpeed * 0.16) * 6.28318);
-    float shine = smoothstep(-0.2, 1.0, waveA * 0.42 + waveB * 0.36 + waveC * 0.22);
-    vec3 deep = vec3(0.015, 0.20, 0.34);
-    vec3 shallow = vec3(0.04, 0.42, 0.58);
-    vec3 highlight = vec3(0.22, 0.68, 0.76);
-    float wave = smoothstep(0.24, 0.92, shine);
+    vec2 tiledUv = vUv * waterRepeat * 0.42;
+    vec2 flow = vec2(time * waterSpeed * 0.055, time * waterSpeed * 0.038);
+    float waveA = sin((tiledUv.x * 0.72 + tiledUv.y * 0.18 + flow.x) * 6.28318);
+    float waveB = sin((tiledUv.y * 0.52 - tiledUv.x * 0.22 + flow.y) * 6.28318);
+    float waveC = sin((tiledUv.x * 1.4 - tiledUv.y * 0.85 + time * waterSpeed * 0.045) * 6.28318);
+    float shine = smoothstep(-0.15, 1.05, waveA * 0.42 + waveB * 0.32 + waveC * 0.18);
+    vec3 deep = vec3(0.028, 0.18, 0.28);
+    vec3 shallow = vec3(0.09, 0.36, 0.45);
+    vec3 highlight = vec3(0.34, 0.60, 0.62);
+    float wave = smoothstep(0.34, 0.96, shine);
     vec3 color = mix(deep, shallow, wave);
-    color = mix(color, highlight, wave * 0.22);
-    float alpha = waterOpacity * waterMask * mix(0.64, 0.96, wave);
+    color = mix(color, highlight, wave * 0.11);
+    float alpha = waterOpacity * waterMask * mix(0.50, 0.78, wave);
 
     gl_FragColor = vec4(color, alpha);
   }
