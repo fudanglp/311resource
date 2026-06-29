@@ -19,7 +19,7 @@ scratch/    临时实验区，已被 .gitignore 忽略
 
 `extractor/` 是独立完整的 Python 工程。它包含 `pyproject.toml`、`uv.lock`、命令行入口、提取脚本和后续测试。所有 Python 依赖和命令都在这个目录内管理。
 
-`viewer/` 预留给后续网页浏览器。它应该读取 `extracted/manifests/*.json` 和提取出的图片/模型/地图，不直接解析原始游戏二进制。
+`viewer/` 是本地网页浏览器。它读取 `extracted/manifests/*.json` 和提取出的图片/模型/地图，不直接解析原始游戏二进制。
 
 `extracted/` 保存当前提取结果。目录较大，暂时不进 git；后续可以按需要迁移到 Git LFS、release artifact 或单独对象存储。
 
@@ -64,3 +64,38 @@ uv run san11res extract-all
 cd extractor
 uv run python -m compileall src/san11resource
 ```
+
+## Viewer 快速使用
+
+先生成本地提取结果，再启动前端：
+
+```bash
+cd extractor
+uv run san11res extract-all
+
+cd ../viewer
+npm install
+npm run dev -- --host 127.0.0.1
+```
+
+打开 Vite 输出的地址，例如：
+
+```text
+http://localhost:5173/map/3d
+```
+
+如果 `5173` 已被占用，Vite 会自动换到下一个端口。
+
+### 3D 世界地图
+
+![3D 世界地图预览](docs/assets/terrain-map-3d-k3st-diffuse.png)
+
+当前 3D 地图页用于调试世界地图 stage 渲染链路：
+
+- `高度源` 默认使用 `K3ST height b00`，按 IDB 线索全图直采作为地形高度/control byte。
+- `颜色层` 默认使用 `K3ST diffuse b01/b02/b03`，这是当前最接近原始地表底图的完整贴图；也可以切换到四季 `GCOL` 色图对比。
+- `WFTX 细节候选` 默认强度为 `0`。`ground_*.wft` 目前判断为材质候选/palette，不是每个格子的主地表 tile。
+- `海面` 默认开启，`网格` 默认关闭；需要对齐格子时可以手动打开网格。
+- `诊断叠加` 可以查看 K3ST/aux/derived 中间层，用于验证高度、水域和派生字段。
+
+前端只读取本地 `extracted/` 输出和 `extractor/ida/data/resource_hints/` 线索；版权资源和导出制品仍然不应提交到仓库。

@@ -221,29 +221,24 @@ pass. It is separate from the terrain/color map pass.
 
 ## Resource implication
 
-The current best resource candidate for `media/stage/water.wft` is the group:
+`media/stage/water.wft` is still a confirmed runtime water asset, but its LINK
+entry binding is currently unresolved.
+
+The previous candidate group:
 
 ```text
-san11pkres.bin entry 4800  WFTX0010  64x64  24bpp  unknown=36  large extra payload
-san11pkres.bin entry 4801  WFTX0010  64x64  24bpp  unknown=36  large extra payload
-san11pkres.bin entry 4802  WFTX0010  64x64  24bpp  unknown=36  large extra payload
-san11pkres.bin entry 4803  WFTX0010  64x64  24bpp  unknown=36  large extra payload
+san11pkres.bin entry 4800..4803  WFTX0010  64x64  24bpp  unknown=36
 ```
 
-Reasons:
+should no longer be treated as the water texture group. IDB gives a stronger
+binding for those entries to `media/stage/ground/ground_*.wft`: `sub_40f2f0`
+indexes the ground season path table and the adjacent packed-resource id table
+maps spring/summer/autumn/winter to `0x12c1/0x12c2/0x12c0/0x12c3`, i.e.
+entries `4801/4802/4800/4803`.
 
-- the entries are immediately after `envinfo.sea` candidate entry `4799`;
-- they precede `hex.wft` candidate entry `4804`;
-- each entry exports a small 64x64 tile and carries `unknown=36` plus a large
-  still-unexplained extra payload, which fits animated/repeated water better
-  than tree or terrain labels;
-- the exported tile visually looks like a regular blue/white point or ripple
-  pattern;
-- IDB confirms `water.wft` has `WaterAnimTime` and `WaterRepetition` options.
-
-This is still a candidate binding, not a final proof. The remaining proof would
-be to trace the path resolver/resource loader from `sub_422eb0` through
-`0x44f640`/`0x44f6e0` to the concrete LINK entry index.
+The remaining proof for water would be to trace the path resolver/resource
+loader from `sub_422eb0` through `0x44f640`/`0x44f6e0` to the concrete LINK
+entry index.
 
 ## Viewer implication
 
@@ -257,16 +252,16 @@ terrain pass:
 
 water pass:
   K3ST aux bits44..51 provide the current best visible-water mask/height field
-  water.wft provides repeated/animated 64x64 tile candidates
+  water.wft has a confirmed runtime loader/render path, but its LINK entry is
+  not yet identified
   vertex diffuse alpha adds local fade/highlight variation
   WaterAnimTime and WaterRepetition control animation speed/repetition
 ```
 
 For the frontend, this means sea rendering should eventually be a separate
-transparent mesh/pass over the terrain, with optional UV scrolling or entry
-selection from the `4800..4803` WFTX tiles. The current diagnostic viewer uses
+transparent mesh/pass over the terrain, with optional UV scrolling once the
+actual water WFT binding is found. The current diagnostic viewer uses
 `aux_bits44_51_has_water` as the mask because it matches the IDB field consumed
 by `sub_415e20`; raw `aux_qword_b05` remains a useful visual proxy but not a
 runtime field name. The terrain shader should stop trying to explain all water
-color from GCOL/K3ST sampling alone. The large WFTX extra payload in these
-entries remains unresolved and should not be called a decoded layer stack yet.
+color from GCOL/K3ST sampling alone.

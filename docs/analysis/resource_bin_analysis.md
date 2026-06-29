@@ -130,6 +130,13 @@ san11res1.bin
 
 - `.fce` 人脸图片是直接的 24-bit BGR WFTX 块。
 - `.bin` 资源是 LINK 容器，很多 entry 是直接 WFTX。
-- 有些 WFTX entry 打包了多层贴图。例如 `san11pkres.bin` entry `2195` 是 8 层 `256x512x32` 贴图 payload。
-- `.wft` 文件包含 WFTX header 和额外 payload。当前 exporter 导出 header 描述的第一张贴图，并在 `wftx_images.csv` 记录额外 payload 说明。
+- WFTX 文件是多图容器：`WFTX0010` 后的 `u32@0x08` 是声明块大小，
+  `u32@0x0c` 是 image count。每张 image 使用 8 字节 header
+  (`u16 width`, `u16 height`, `u8 bpp`, `u8 extra_blocks`, `u8 mip_count`,
+  `u8 flags`)，随后是 4 字节行对齐的像素数据；`extra_blocks > 0` 时还有
+  `extra_blocks * 1024` 字节附加数据。旧的 `packed_bpp >> 16` 层数推断和
+  `unknown` 层数推断是反编译前的误判。
+- `ground_*.wft` entries `4800..4803` 各包含 36 张 image。旧的
+  `payload[32:]` 推断式 `1024x989` atlas 解码是错误的；横纹来自把独立
+  image 串接成一张线性图。
 - raw payload 内出现的 `BM` 字节经常只是像素数据，不一定是真 BMP。只有整个 entry 自身拥有有效 BMP header 时才导出 BMP。

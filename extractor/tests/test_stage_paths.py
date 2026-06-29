@@ -33,16 +33,22 @@ def test_default_stg_candidate_uses_k3st_entry_from_idb_loader():
     assert "K3ST parser" in candidates[0].basis
 
 
-def test_water_wft_candidates_use_extra_payload_wftx_entries():
+def test_ground_wft_candidates_use_idb_packed_resource_ids():
     paths = [
         StagePath(
             source="San11WPK.exe",
             sequence=0,
             offset=0,
-            path="media/stage/water.wft",
-            category="root",
+            path=path,
+            category="ground",
             extension=".wft",
-            basename="water.wft",
+            basename=path.rsplit("/", 1)[1],
+        )
+        for path in (
+            "media/stage/ground/ground_spring.wft",
+            "media/stage/ground/ground_summer.wft",
+            "media/stage/ground/ground_autumn.wft",
+            "media/stage/ground/ground_winter.wft",
         )
     ]
     entries = [
@@ -58,6 +64,11 @@ def test_water_wft_candidates_use_extra_payload_wftx_entries():
 
     candidates = build_candidates(paths, entries)
 
-    assert [candidate.candidate_entry for candidate in candidates] == [4800, 4801, 4802, 4803]
-    assert all(candidate.path == "media/stage/water.wft" for candidate in candidates)
-    assert all("unknown=36 and large extra data" in candidate.basis for candidate in candidates)
+    assert [(candidate.path, candidate.candidate_entry) for candidate in candidates] == [
+        ("media/stage/ground/ground_spring.wft", 4801),
+        ("media/stage/ground/ground_summer.wft", 4802),
+        ("media/stage/ground/ground_autumn.wft", 4800),
+        ("media/stage/ground/ground_winter.wft", 4803),
+    ]
+    assert all(candidate.confidence == "high" for candidate in candidates)
+    assert all("sub_40f2f0" in candidate.basis for candidate in candidates)

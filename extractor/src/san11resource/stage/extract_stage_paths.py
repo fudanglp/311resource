@@ -223,16 +223,32 @@ def build_candidates(paths: list[StagePath], entries: list[LinkEntry]) -> list[S
             "Likely filename-to-entry binding by signature and cluster position.",
         )
 
-    for path in [row.path for row in paths if row.path == "media/stage/water.wft"]:
-        for entry_index in (4800, 4801, 4802, 4803):
+    ground_entry_by_path = {
+        "media/stage/ground/ground_spring.wft": 4801,
+        "media/stage/ground/ground_summer.wft": 4802,
+        "media/stage/ground/ground_autumn.wft": 4800,
+        "media/stage/ground/ground_winter.wft": 4803,
+    }
+    for path, entry_index in ground_entry_by_path.items():
+        if any(row.path == path for row in paths):
             add_candidate(
                 candidates,
                 path,
                 by_entry.get(entry_index),
-                "medium",
-                "water.wft has dedicated IDB loader/render xrefs and entries 4800..4803 are consecutive 64x64 WFTX payloads with unknown=36 and large extra data",
-                "Likely animated/repeated water texture tiles; extra WFTX payload semantics and exact filename-to-entry binding still need confirmation.",
+                "high",
+                "IDB sub_40f2f0 indexes the ground_*.wft path table and the packed-resource id table maps the same season slots to entries 4801/4802/4800/4803",
+                "These WFTX payloads have a large header area and a 64x64 decoded surface; the full WFT material layout still needs deeper decoding.",
             )
+
+    for path in [row.path for row in paths if row.path == "media/stage/water.wft"]:
+        add_candidate(
+            candidates,
+            path,
+            None,
+            "low",
+            "water.wft has dedicated IDB loader/render xrefs, but entries 4800..4803 are now tied more strongly to ground_*.wft by packed-resource ids",
+            "Keep water.wft as an unresolved first-class stage texture until its packed-resource id or LINK entry binding is traced.",
+        )
 
     for path in [row.path for row in paths if row.path == "media/stage/distantview/distantview.bin"]:
         add_candidate(
@@ -244,31 +260,39 @@ def build_candidates(paths: list[StagePath], entries: list[LinkEntry]) -> list[S
             "Likely metadata for the four seasonal distant-view textures.",
         )
 
-    season_color_paths = [row.path for row in paths if row.path.startswith("media/stage/color_")]
-    for path, entry_index in zip(season_color_paths, (4787, 4788, 4789, 4790), strict=False):
-        add_candidate(
-            candidates,
-            path,
-            by_entry.get(entry_index),
-            "low",
-            "four color_*.sea paths and four consecutive GCOL0001 map-color payloads",
-            "Extension and signature differ; treat as ordering evidence only.",
-        )
+    color_entry_by_path = {
+        "media/stage/color_spring.sea": 4788,
+        "media/stage/color_summer.sea": 4789,
+        "media/stage/color_autumn.sea": 4787,
+        "media/stage/color_winter.sea": 4790,
+    }
+    for path, entry_index in color_entry_by_path.items():
+        if any(row.path == path for row in paths):
+            add_candidate(
+                candidates,
+                path,
+                by_entry.get(entry_index),
+                "medium",
+                "IDB sub_5a2ec0 indexes the color_*.sea path table and the packed-resource id table maps the same season slots to entries 4788/4789/4787/4790",
+                "GCOL0001 extension differs from .sea, but the packed-resource id table is stronger than filename ordering.",
+            )
 
-    distantview_paths = [
-        row.path
-        for row in paths
-        if row.path.startswith("media/stage/distantview/") and row.path.endswith("_distantview.wft")
-    ]
-    for path, entry_index in zip(distantview_paths, (4794, 4796, 4797, 4798), strict=False):
-        add_candidate(
-            candidates,
-            path,
-            by_entry.get(entry_index),
-            "medium",
-            "four seasonal distant-view paths and four nearby 512x256 WFTX payloads",
-            "Entry 4794 visually looks like a distant mountain/sky panorama.",
-        )
+    distantview_entry_by_path = {
+        "media/stage/distantview/spring_distantview.wft": 4796,
+        "media/stage/distantview/summer_distantview.wft": 4797,
+        "media/stage/distantview/autumn_distantview.wft": 4794,
+        "media/stage/distantview/winter_distantview.wft": 4798,
+    }
+    for path, entry_index in distantview_entry_by_path.items():
+        if any(row.path == path for row in paths):
+            add_candidate(
+                candidates,
+                path,
+                by_entry.get(entry_index),
+                "medium",
+                "IDB distant-view path/id tables map spring/summer/autumn/winter to entries 4796/4797/4794/4798",
+                "These entries are 512x256 WFTX panoramas; entry 4794 visually looks like a distant mountain/sky panorama.",
+            )
 
     for path in [row.path for row in paths if row.path == "media/stage/hex.wft"]:
         add_candidate(

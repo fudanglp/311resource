@@ -14,7 +14,11 @@ type TextureOption = {
   path: string;
 };
 
-type HeightSampleMode = "left" | "right" | "full";
+type GroundTextureOption = {
+  id: string;
+  label: string;
+  tilePaths: string[];
+};
 
 const heightLayers: TextureOption[] = [
   {
@@ -85,51 +89,97 @@ const diagnosticLayers: TextureOption[] = [
 const colorLayers: TextureOption[] = [
   {
     id: "k3st-diffuse",
-    label: "K3ST diffuse b01/b02/b03",
+    label: "K3ST diffuse debug b01/b02/b03",
     path: "extracted/maps/candidates/san11pkres/entry_04793_1f58cc67_K3ST0006/entry_04793_1f58cc67_K3ST0006_control_diffuse_b01_b02_b03_map_rgb.png"
   },
   {
-    id: "gcol-4787",
-    label: "GCOL 4787",
-    path: "extracted/maps/candidates/san11pkres/entry_04787_1e91ac8b_GCOL0001/entry_04787_1e91ac8b_GCOL0001_map_rgb.png"
-  },
-  {
-    id: "gcol-4788",
-    label: "GCOL 4788",
+    id: "gcol-spring-4788",
+    label: "spring color 4788",
     path: "extracted/maps/candidates/san11pkres/entry_04788_1ec1c496_GCOL0001/entry_04788_1ec1c496_GCOL0001_map_rgb.png"
   },
   {
-    id: "gcol-4789",
-    label: "GCOL 4789",
+    id: "gcol-summer-4789",
+    label: "summer color 4789",
     path: "extracted/maps/candidates/san11pkres/entry_04789_1ef1dca1_GCOL0001/entry_04789_1ef1dca1_GCOL0001_map_rgb.png"
   },
   {
-    id: "gcol-4790",
-    label: "GCOL 4790",
+    id: "gcol-autumn-4787",
+    label: "autumn color 4787",
+    path: "extracted/maps/candidates/san11pkres/entry_04787_1e91ac8b_GCOL0001/entry_04787_1e91ac8b_GCOL0001_map_rgb.png"
+  },
+  {
+    id: "gcol-winter-4790",
+    label: "winter color 4790",
     path: "extracted/maps/candidates/san11pkres/entry_04790_1f21f4ac_GCOL0001/entry_04790_1f21f4ac_GCOL0001_map_rgb.png"
   }
 ];
 
-const waterTextures: TextureOption[] = [
+const groundTileSpecs = [
+  "64x64_24bpp",
+  "64x64_24bpp",
+  "128x128_24bpp",
+  "128x128_24bpp",
+  "128x128_24bpp",
+  "128x128_24bpp",
+  "256x256_24bpp",
+  "128x128_24bpp",
+  "256x256_24bpp",
+  "128x128_24bpp",
+  "128x128_24bpp",
+  "256x256_24bpp",
+  "128x128_24bpp",
+  "64x64_24bpp",
+  "128x128_24bpp",
+  "256x256_24bpp",
+  "256x256_24bpp",
+  "128x128_24bpp",
+  "256x256_24bpp",
+  "128x128_24bpp",
+  "256x256_24bpp",
+  "128x128_24bpp",
+  "256x256_24bpp",
+  "128x128_24bpp",
+  "128x128_24bpp",
+  "256x256_24bpp",
+  "128x128_24bpp",
+  "64x64_24bpp",
+  "128x128_24bpp",
+  "256x256_24bpp",
+  "128x128_24bpp",
+  "128x128_24bpp",
+  "128x128_24bpp",
+  "64x64_24bpp",
+  "64x64_24bpp",
+  "128x128_32bpp"
+];
+
+function buildGroundTilePaths(seasonFolder: string) {
+  return groundTileSpecs.map(
+    (spec, index) =>
+      `extracted/maps/original_textures/decompiled_wftx_ground/${seasonFolder}/tile_${String(index).padStart(2, "0")}_${spec}.png`
+  );
+}
+
+const groundTextures: GroundTextureOption[] = [
   {
-    id: "water-4800",
-    label: "water 4800",
-    path: "extracted/resources/output/san11pkres/wftx/64x64_24bpp/entry_04800_211911e7.png"
+    id: "ground-spring-4801",
+    label: "spring ground 4801",
+    tilePaths: buildGroundTilePaths("spring_4801")
   },
   {
-    id: "water-4801",
-    label: "water 4801",
-    path: "extracted/resources/output/san11pkres/wftx/64x64_24bpp/entry_04801_21477317.png"
+    id: "ground-summer-4802",
+    label: "summer ground 4802",
+    tilePaths: buildGroundTilePaths("summer_4802")
   },
   {
-    id: "water-4802",
-    label: "water 4802",
-    path: "extracted/resources/output/san11pkres/wftx/64x64_24bpp/entry_04802_2175d447.png"
+    id: "ground-autumn-4800",
+    label: "autumn ground 4800",
+    tilePaths: buildGroundTilePaths("autumn_4800")
   },
   {
-    id: "water-4803",
-    label: "water 4803",
-    path: "extracted/resources/output/san11pkres/wftx/64x64_24bpp/entry_04803_21a43577.png"
+    id: "ground-winter-4803",
+    label: "winter ground 4803",
+    tilePaths: buildGroundTilePaths("winter_4803")
   }
 ];
 
@@ -141,25 +191,25 @@ const terrainSize = 720;
 
 export function TerrainMapPage() {
   const [heightLayerId, setHeightLayerId] = useState(heightLayers[0].id);
-  const [colorLayerId, setColorLayerId] = useState("gcol-4787");
+  const [colorLayerId, setColorLayerId] = useState("k3st-diffuse");
+  const [groundTextureId, setGroundTextureId] = useState("ground-summer-4802");
   const [diagnosticLayerId, setDiagnosticLayerId] = useState(diagnosticLayers[0].id);
   const [diagnosticOpacity, setDiagnosticOpacity] = useState(45);
-  const [heightScale, setHeightScale] = useState(18);
+  const [groundStrength, setGroundStrength] = useState(0);
+  const [heightScale, setHeightScale] = useState(12);
   const [heightBias, setHeightBias] = useState(0);
   const [seaLevel, setSeaLevel] = useState(0);
-  const [heightSampleMode, setHeightSampleMode] = useState<HeightSampleMode>("full");
   const [wireframe, setWireframe] = useState(false);
-  const [showSea, setShowSea] = useState(false);
+  const [showSea, setShowSea] = useState(true);
   const [showGrid, setShowGrid] = useState(false);
-  const [waterTextureId, setWaterTextureId] = useState(waterTextures[0].id);
   const [waterRepeat, setWaterRepeat] = useState(38);
   const [waterSpeed, setWaterSpeed] = useState(14);
   const [waterOpacity, setWaterOpacity] = useState(58);
 
   const heightLayer = heightLayers.find((layer) => layer.id === heightLayerId) ?? heightLayers[0];
   const colorLayer = colorLayers.find((layer) => layer.id === colorLayerId) ?? colorLayers[0];
+  const groundTexture = groundTextures.find((texture) => texture.id === groundTextureId) ?? groundTextures[0];
   const diagnosticLayer = diagnosticLayers.find((layer) => layer.id === diagnosticLayerId) ?? diagnosticLayers[0];
-  const waterTexture = waterTextures.find((texture) => texture.id === waterTextureId) ?? waterTextures[0];
 
   return (
     <div className="relative h-full min-h-[620px] overflow-hidden bg-[#d6ddd2]">
@@ -167,8 +217,9 @@ export function TerrainMapPage() {
         colorUrl={repoFile(colorLayer.path)}
         diagnosticOpacity={diagnosticLayer.id === "none" ? 0 : diagnosticOpacity / 100}
         diagnosticUrl={diagnosticLayer.id === "none" ? repoFile(heightLayer.path) : repoFile(diagnosticLayer.path)}
+        groundStrength={groundStrength / 100}
+        groundTileUrls={groundTexture.tilePaths.map(repoFile)}
         heightBias={heightBias}
-        heightSampleMode={heightSampleMode}
         heightScale={heightScale}
         heightUrl={repoFile(heightLayer.path)}
         seaLevel={seaLevel}
@@ -178,7 +229,6 @@ export function TerrainMapPage() {
         waterRepeat={waterRepeat}
         waterSpeed={waterSpeed / 100}
         waterMaskUrl={repoFile(waterMaskPath)}
-        waterUrl={repoFile(waterTexture.path)}
         wireframe={wireframe}
       />
 
@@ -189,7 +239,7 @@ export function TerrainMapPage() {
             <h1 className="text-sm font-semibold">3D 世界地图</h1>
           </div>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            K3ST 诊断视图。b00 驱动地形高度；b01/b02/b03 可作为 terrain diffuse 颜色层。
+            K3ST b00 驱动地形高度；K3ST diffuse/GCOL 提供完整地形色图；ground WFTX 只是候选细节材质。
           </p>
         </div>
 
@@ -214,18 +264,6 @@ export function TerrainMapPage() {
             </Select>
           </ControlBlock>
 
-          <ControlBlock label="高度采样">
-            <Select
-              value={heightSampleMode}
-              onChange={(event) => setHeightSampleMode(event.target.value as HeightSampleMode)}
-              className="w-full"
-            >
-              <option value="left">左半拉伸</option>
-              <option value="right">右半拉伸</option>
-              <option value="full">全图直采</option>
-            </Select>
-          </ControlBlock>
-
           <ControlBlock label="颜色层">
             <Select value={colorLayerId} onChange={(event) => setColorLayerId(event.target.value)} className="w-full">
               {colorLayers.map((layer) => (
@@ -236,20 +274,21 @@ export function TerrainMapPage() {
             </Select>
           </ControlBlock>
 
-          <RangeControl label="高度倍率" max={40} min={0} onChange={setHeightScale} value={heightScale} />
-          <RangeControl label="高度偏移" max={30} min={-30} onChange={setHeightBias} value={heightBias} />
-          <RangeControl label="海平面" max={40} min={-50} onChange={setSeaLevel} value={seaLevel} />
-          <RangeControl label="诊断透明" max={100} min={0} onChange={setDiagnosticOpacity} value={diagnosticOpacity} />
-
-          <ControlBlock label="水面贴图">
-            <Select value={waterTextureId} onChange={(event) => setWaterTextureId(event.target.value)} className="w-full">
-              {waterTextures.map((texture) => (
+          <ControlBlock label="WFTX 细节候选">
+            <Select value={groundTextureId} onChange={(event) => setGroundTextureId(event.target.value)} className="w-full">
+              {groundTextures.map((texture) => (
                 <option key={texture.id} value={texture.id}>
                   {texture.label}
                 </option>
               ))}
             </Select>
           </ControlBlock>
+
+          <RangeControl label="高度倍率" max={40} min={0} onChange={setHeightScale} value={heightScale} />
+          <RangeControl label="高度偏移" max={30} min={-30} onChange={setHeightBias} value={heightBias} />
+          <RangeControl label="海平面" max={40} min={-50} onChange={setSeaLevel} value={seaLevel} />
+          <RangeControl label="诊断透明" max={100} min={0} onChange={setDiagnosticOpacity} value={diagnosticOpacity} />
+          <RangeControl label="WFTX 强度" max={100} min={0} onChange={setGroundStrength} value={groundStrength} />
 
           <RangeControl label="水面重复" max={96} min={4} onChange={setWaterRepeat} value={waterRepeat} />
           <RangeControl label="水面流速" max={80} min={0} onChange={setWaterSpeed} value={waterSpeed} />
@@ -265,14 +304,16 @@ export function TerrainMapPage() {
                 variant="outline"
                 onClick={() => {
                   setHeightLayerId(heightLayers[0].id);
-                  setColorLayerId("gcol-4787");
+                  setColorLayerId("k3st-diffuse");
+                  setGroundTextureId("ground-summer-4802");
                   setDiagnosticLayerId(diagnosticLayers[0].id);
                   setDiagnosticOpacity(45);
-                  setHeightScale(18);
+                  setGroundStrength(0);
+                  setHeightScale(12);
                   setHeightBias(0);
                   setSeaLevel(0);
-                  setHeightSampleMode("full");
-                  setWaterTextureId(waterTextures[0].id);
+                  setShowSea(true);
+                  setShowGrid(false);
                   setWaterRepeat(38);
                   setWaterSpeed(14);
                   setWaterOpacity(58);
@@ -297,8 +338,9 @@ function TerrainViewport({
   colorUrl,
   diagnosticOpacity,
   diagnosticUrl,
+  groundStrength,
+  groundTileUrls,
   heightBias,
-  heightSampleMode,
   heightScale,
   heightUrl,
   seaLevel,
@@ -308,14 +350,14 @@ function TerrainViewport({
   waterRepeat,
   waterSpeed,
   waterMaskUrl,
-  waterUrl,
   wireframe
 }: {
   colorUrl: string;
   diagnosticOpacity: number;
   diagnosticUrl: string;
+  groundStrength: number;
+  groundTileUrls: string[];
   heightBias: number;
-  heightSampleMode: HeightSampleMode;
   heightScale: number;
   heightUrl: string;
   seaLevel: number;
@@ -325,7 +367,6 @@ function TerrainViewport({
   waterRepeat: number;
   waterSpeed: number;
   waterMaskUrl: string;
-  waterUrl: string;
   wireframe: boolean;
 }) {
   return (
@@ -347,10 +388,12 @@ function TerrainViewport({
           colorUrl={colorUrl}
           diagnosticOpacity={diagnosticOpacity}
           diagnosticUrl={diagnosticUrl}
+          groundStrength={groundStrength}
+          groundTileUrls={groundTileUrls}
           heightBias={heightBias}
-          heightSampleMode={heightSampleMode}
           heightScale={heightScale}
           heightUrl={heightUrl}
+          showGrid={showGrid}
           wireframe={wireframe}
         />
         {showSea ? (
@@ -360,10 +403,8 @@ function TerrainViewport({
             seaLevel={seaLevel}
             speed={waterSpeed}
             waterMaskUrl={waterMaskUrl}
-            waterUrl={waterUrl}
           />
         ) : null}
-        {showGrid ? <gridHelper args={[terrainSize, 24, "#2f6f83", "#8aa29a"]} position={[0, seaLevel + 0.5, 0]} /> : null}
       </Suspense>
 
       <OrbitControls
@@ -395,36 +436,49 @@ function TerrainMesh({
   colorUrl,
   diagnosticOpacity,
   diagnosticUrl,
+  groundStrength,
+  groundTileUrls,
   heightBias,
-  heightSampleMode,
   heightScale,
   heightUrl,
+  showGrid,
   wireframe
 }: {
   colorUrl: string;
   diagnosticOpacity: number;
   diagnosticUrl: string;
+  groundStrength: number;
+  groundTileUrls: string[];
   heightBias: number;
-  heightSampleMode: HeightSampleMode;
   heightScale: number;
   heightUrl: string;
+  showGrid: boolean;
   wireframe: boolean;
 }) {
   const [diffuseTexture, heightTexture, diagnosticTexture] = useLoader(THREE.TextureLoader, [colorUrl, heightUrl, diagnosticUrl]);
+  const groundTileTextures = useLoader(THREE.TextureLoader, groundTileUrls);
+  const groundAtlasTexture = useMemo(() => buildGroundAtlasTexture(groundTileTextures), [groundTileTextures]);
 
   useEffect(() => {
     diffuseTexture.colorSpace = THREE.SRGBColorSpace;
     diffuseTexture.anisotropy = 8;
     diffuseTexture.wrapS = THREE.ClampToEdgeWrapping;
     diffuseTexture.wrapT = THREE.ClampToEdgeWrapping;
-    configureHeightTexture(heightTexture, heightSampleMode);
+    configureDetailTexture(groundAtlasTexture, 12);
+    configureHeightTexture(heightTexture);
     diagnosticTexture.colorSpace = THREE.NoColorSpace;
     diagnosticTexture.wrapS = THREE.ClampToEdgeWrapping;
     diagnosticTexture.wrapT = THREE.ClampToEdgeWrapping;
     diagnosticTexture.minFilter = THREE.LinearFilter;
     diagnosticTexture.magFilter = THREE.LinearFilter;
     diagnosticTexture.needsUpdate = true;
-  }, [diagnosticTexture, diffuseTexture, heightSampleMode, heightTexture]);
+  }, [diagnosticTexture, diffuseTexture, groundAtlasTexture, heightTexture]);
+
+  useEffect(() => {
+    return () => {
+      groundAtlasTexture.dispose();
+    };
+  }, [groundAtlasTexture]);
 
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]}>
@@ -433,53 +487,113 @@ function TerrainMesh({
         colorMap={diffuseTexture}
         diagnosticMap={diagnosticTexture}
         diagnosticOpacity={diagnosticOpacity}
+        groundMap={groundAtlasTexture}
+        groundStrength={groundStrength}
         heightBias={heightBias}
         heightMap={heightTexture}
-        heightSampleMode={heightSampleMode}
         heightScale={heightScale}
+        showGrid={showGrid}
         wireframe={wireframe}
       />
     </mesh>
   );
 }
 
-function configureHeightTexture(texture: THREE.Texture, heightSampleMode: HeightSampleMode) {
+function configureHeightTexture(texture: THREE.Texture) {
   texture.colorSpace = THREE.NoColorSpace;
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.ClampToEdgeWrapping;
   texture.minFilter = THREE.LinearFilter;
   texture.magFilter = THREE.LinearFilter;
-
-  if (heightSampleMode === "left") {
-    texture.offset.set(0, 0);
-    texture.repeat.set(0.5, 1);
-  } else if (heightSampleMode === "right") {
-    texture.offset.set(0.5, 0);
-    texture.repeat.set(0.5, 1);
-  } else {
-    texture.offset.set(0, 0);
-    texture.repeat.set(1, 1);
-  }
+  texture.offset.set(0, 0);
+  texture.repeat.set(1, 1);
   texture.needsUpdate = true;
+}
+
+function configureDetailTexture(texture: THREE.Texture, anisotropy: number) {
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = anisotropy;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.generateMipmaps = true;
+  texture.needsUpdate = true;
+}
+
+function buildGroundAtlasTexture(tileTextures: THREE.Texture[]) {
+  const columns = 6;
+  const cellSize = 256;
+  const canvas = document.createElement("canvas");
+  canvas.width = columns * cellSize;
+  canvas.height = columns * cellSize;
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    throw new Error("Unable to create ground atlas canvas context");
+  }
+
+  context.imageSmoothingEnabled = false;
+  context.clearRect(0, 0, canvas.width, canvas.height);
+
+  tileTextures.forEach((texture, index) => {
+    const image = texture.image as CanvasImageSource | undefined;
+    if (!image) {
+      return;
+    }
+
+    const x = (index % columns) * cellSize;
+    const y = Math.floor(index / columns) * cellSize;
+    const pattern = context.createPattern(image, "repeat");
+    context.save();
+    context.beginPath();
+    context.rect(x, y, cellSize, cellSize);
+    context.clip();
+
+    if (pattern) {
+      context.translate(x, y);
+      context.fillStyle = pattern;
+      context.fillRect(0, 0, cellSize, cellSize);
+    } else {
+      context.drawImage(image, x, y, cellSize, cellSize);
+    }
+
+    context.restore();
+  });
+
+  const atlasTexture = new THREE.CanvasTexture(canvas);
+  atlasTexture.name = "decompiled-wftx-ground-atlas";
+  atlasTexture.colorSpace = THREE.SRGBColorSpace;
+  atlasTexture.wrapS = THREE.RepeatWrapping;
+  atlasTexture.wrapT = THREE.RepeatWrapping;
+  atlasTexture.minFilter = THREE.LinearMipmapLinearFilter;
+  atlasTexture.magFilter = THREE.LinearFilter;
+  atlasTexture.generateMipmaps = true;
+  atlasTexture.needsUpdate = true;
+  return atlasTexture;
 }
 
 function TerrainMaterial({
   colorMap,
   diagnosticMap,
   diagnosticOpacity,
+  groundMap,
+  groundStrength,
   heightBias,
   heightMap,
-  heightSampleMode,
   heightScale,
+  showGrid,
   wireframe
 }: {
   colorMap: THREE.Texture;
   diagnosticMap: THREE.Texture;
   diagnosticOpacity: number;
+  groundMap: THREE.Texture;
+  groundStrength: number;
   heightBias: number;
   heightMap: THREE.Texture;
-  heightSampleMode: HeightSampleMode;
   heightScale: number;
+  showGrid: boolean;
   wireframe: boolean;
 }) {
   const uniforms = useMemo(
@@ -487,12 +601,24 @@ function TerrainMaterial({
       colorMap: { value: colorMap },
       diagnosticMap: { value: diagnosticMap },
       diagnosticOpacity: { value: diagnosticOpacity },
+      groundMap: { value: groundMap },
+      groundStrength: { value: groundStrength },
       heightBias: { value: heightBias },
       heightMap: { value: heightMap },
-      heightSampleMode: { value: sampleModeToUniform(heightSampleMode) },
-      heightScale: { value: heightScale }
+      heightScale: { value: heightScale },
+      showGrid: { value: showGrid ? 1 : 0 }
     }),
-    [colorMap, diagnosticMap, diagnosticOpacity, heightBias, heightMap, heightSampleMode, heightScale]
+    [
+      colorMap,
+      diagnosticMap,
+      diagnosticOpacity,
+      groundMap,
+      groundStrength,
+      heightBias,
+      heightMap,
+      heightScale,
+      showGrid
+    ]
   );
 
   return (
@@ -505,41 +631,22 @@ function TerrainMaterial({
   );
 }
 
-function sampleModeToUniform(mode: HeightSampleMode) {
-  if (mode === "left") {
-    return 0;
-  }
-  if (mode === "right") {
-    return 1;
-  }
-  return 2;
-}
-
 const terrainVertexShader = `
   uniform sampler2D heightMap;
   uniform float heightBias;
-  uniform int heightSampleMode;
   uniform float heightScale;
 
   varying float vHeight;
+  varying vec3 vWorldPosition;
   varying vec2 vUv;
-
-  vec2 heightUv(vec2 uv) {
-    if (heightSampleMode == 0) {
-      return vec2(uv.x * 0.5, uv.y);
-    }
-    if (heightSampleMode == 1) {
-      return vec2(0.5 + uv.x * 0.5, uv.y);
-    }
-    return uv;
-  }
 
   void main() {
     vUv = uv;
-    float h = texture2D(heightMap, heightUv(uv)).r;
+    float h = texture2D(heightMap, uv).r;
     vHeight = h;
     vec3 displaced = position;
     displaced.z += h * heightScale + heightBias;
+    vWorldPosition = (modelMatrix * vec4(displaced, 1.0)).xyz;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(displaced, 1.0);
   }
 `;
@@ -547,16 +654,81 @@ const terrainVertexShader = `
 const terrainFragmentShader = `
   uniform sampler2D colorMap;
   uniform sampler2D diagnosticMap;
+  uniform sampler2D groundMap;
   uniform float diagnosticOpacity;
+  uniform float groundStrength;
+  uniform int showGrid;
 
   varying float vHeight;
+  varying vec3 vWorldPosition;
   varying vec2 vUv;
+
+  float selectGroundTile(vec3 baseColor, float heightValue) {
+    float greenBias = baseColor.g - max(baseColor.r, baseColor.b) * 0.82;
+    float luma = dot(baseColor, vec3(0.299, 0.587, 0.114));
+    float highland = smoothstep(0.36, 0.78, heightValue);
+    float mountain = max(highland, smoothstep(0.08, 0.18, baseColor.b - baseColor.g));
+    float tile = 29.0;
+
+    if (greenBias > 0.055 && heightValue < 0.64) {
+      tile = 23.0;
+    }
+    if (luma > 0.58 || (luma > 0.48 && highland > 0.3)) {
+      tile = 31.0;
+    }
+    if (mountain > 0.72) {
+      tile = 6.0;
+    }
+
+    return tile;
+  }
+
+  vec3 sampleGroundTile(sampler2D atlas, vec2 uv, float tileIndex, float repeatScale) {
+    float columns = 6.0;
+    float tileSize = 1.0 / columns;
+    float index = floor(tileIndex + 0.5);
+    float column = mod(index, columns);
+    float row = floor(index / columns);
+    vec2 localUv = fract(uv * repeatScale);
+    vec2 inset = vec2(0.75 / 1024.0);
+    vec2 atlasUv = vec2(column, row) * tileSize + localUv * (tileSize - inset * 2.0) + inset;
+    return texture2D(atlas, atlasUv).rgb;
+  }
+
+  float terrainGridMask(vec2 uv) {
+    vec2 cell = fract(uv * 48.0);
+    vec2 edge = min(cell, 1.0 - cell);
+    float line = 1.0 - smoothstep(0.0, 0.035, min(edge.x, edge.y));
+    return line;
+  }
 
   void main() {
     vec3 baseColor = texture2D(colorMap, vUv).rgb;
-    float shade = mix(0.72, 1.12, smoothstep(0.08, 0.9, vHeight));
-    vec3 fogTint = vec3(0.78, 0.84, 0.76);
-    vec3 color = mix(baseColor * shade, fogTint, 0.08);
+    float groundTile = selectGroundTile(baseColor, vHeight);
+    float groundRepeat = 42.0;
+    vec3 groundLowDetail = sampleGroundTile(groundMap, vUv, groundTile, groundRepeat * 0.28);
+    vec3 groundMidDetail = sampleGroundTile(groundMap, vUv, groundTile, groundRepeat * 0.52);
+    vec3 groundFineDetail = sampleGroundTile(groundMap, vUv, groundTile, groundRepeat * 0.78);
+    float cameraDistance = distance(cameraPosition, vWorldPosition);
+    float midWeight = 1.0 - smoothstep(520.0, 900.0, cameraDistance);
+    float fineWeight = 1.0 - smoothstep(260.0, 560.0, cameraDistance);
+    vec3 groundDetail = mix(groundLowDetail, groundMidDetail, midWeight * 0.82);
+    groundDetail = mix(groundDetail, groundFineDetail, fineWeight);
+    float groundLuma = dot(groundDetail, vec3(0.299, 0.587, 0.114));
+    vec3 groundTone = mix(vec3(groundLuma), groundDetail, 0.28);
+    vec3 detailMultiplier = mix(vec3(1.0), groundTone * 1.35, 0.42);
+    float detailWeight = groundStrength * mix(0.48, 0.82, fineWeight);
+    baseColor = mix(baseColor, baseColor * detailMultiplier, detailWeight);
+    baseColor += (groundLuma - 0.5) * groundStrength * 0.12;
+
+    float shade = mix(0.86, 1.08, smoothstep(0.08, 0.9, vHeight));
+    vec3 fogTint = vec3(0.82, 0.86, 0.80);
+    vec3 color = mix(baseColor * shade, fogTint, 0.05);
+    if (showGrid == 1) {
+      float grid = terrainGridMask(vUv);
+      color = mix(color, vec3(0.92, 0.96, 0.90), grid * 0.48);
+      color = mix(color, vec3(0.18, 0.22, 0.18), grid * 0.08);
+    }
     float diagnosticValue = texture2D(diagnosticMap, vUv).r;
     vec3 diagnosticColor = vec3(diagnosticValue);
     color = mix(color, diagnosticColor, diagnosticOpacity);
@@ -569,45 +741,35 @@ function WaterSurface({
   repeat,
   seaLevel,
   speed,
-  waterMaskUrl,
-  waterUrl
+  waterMaskUrl
 }: {
   opacity: number;
   repeat: number;
   seaLevel: number;
   speed: number;
   waterMaskUrl: string;
-  waterUrl: string;
 }) {
   const materialRef = useRef<THREE.ShaderMaterial | null>(null);
-  const [waterTexture, waterMaskTexture] = useLoader(THREE.TextureLoader, [waterUrl, waterMaskUrl]);
+  const waterMaskTexture = useLoader(THREE.TextureLoader, waterMaskUrl);
 
   useEffect(() => {
-    waterTexture.colorSpace = THREE.SRGBColorSpace;
-    waterTexture.wrapS = THREE.RepeatWrapping;
-    waterTexture.wrapT = THREE.RepeatWrapping;
-    waterTexture.minFilter = THREE.LinearFilter;
-    waterTexture.magFilter = THREE.LinearFilter;
-    waterTexture.anisotropy = 8;
-    waterTexture.needsUpdate = true;
     waterMaskTexture.colorSpace = THREE.NoColorSpace;
     waterMaskTexture.wrapS = THREE.ClampToEdgeWrapping;
     waterMaskTexture.wrapT = THREE.ClampToEdgeWrapping;
     waterMaskTexture.minFilter = THREE.LinearFilter;
     waterMaskTexture.magFilter = THREE.LinearFilter;
     waterMaskTexture.needsUpdate = true;
-  }, [waterMaskTexture, waterTexture]);
+  }, [waterMaskTexture]);
 
   const uniforms = useMemo(
     () => ({
       time: { value: 0 },
-      waterMap: { value: waterTexture },
       waterMaskMap: { value: waterMaskTexture },
       waterOpacity: { value: opacity },
       waterRepeat: { value: repeat },
       waterSpeed: { value: speed }
     }),
-    [opacity, repeat, speed, waterMaskTexture, waterTexture]
+    [opacity, repeat, speed, waterMaskTexture]
   );
 
   useFrame((state) => {
@@ -642,7 +804,6 @@ const waterVertexShader = `
 `;
 
 const waterFragmentShader = `
-  uniform sampler2D waterMap;
   uniform sampler2D waterMaskMap;
   uniform float time;
   uniform float waterOpacity;
@@ -658,16 +819,18 @@ const waterFragmentShader = `
       discard;
     }
 
+    vec2 tiledUv = vUv * waterRepeat;
     vec2 flow = vec2(time * waterSpeed * 0.18, time * waterSpeed * 0.11);
-    vec3 tile = texture2D(waterMap, vUv * waterRepeat + flow).rgb;
-    float shine = dot(tile, vec3(0.299, 0.587, 0.114));
+    float waveA = sin((tiledUv.x + flow.x) * 6.28318);
+    float waveB = sin((tiledUv.y * 0.72 + tiledUv.x * 0.38 + flow.y) * 6.28318);
+    float waveC = sin((tiledUv.x * 1.7 - tiledUv.y * 1.25 + time * waterSpeed * 0.16) * 6.28318);
+    float shine = smoothstep(-0.2, 1.0, waveA * 0.42 + waveB * 0.36 + waveC * 0.22);
     vec3 deep = vec3(0.015, 0.20, 0.34);
     vec3 shallow = vec3(0.04, 0.42, 0.58);
     vec3 highlight = vec3(0.22, 0.68, 0.76);
     float wave = smoothstep(0.24, 0.92, shine);
     vec3 color = mix(deep, shallow, wave);
     color = mix(color, highlight, wave * 0.22);
-    color = mix(color, tile, 0.04);
     float alpha = waterOpacity * waterMask * mix(0.64, 0.96, wave);
 
     gl_FragColor = vec4(color, alpha);

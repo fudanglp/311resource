@@ -209,8 +209,14 @@ media/stage/default.stg              -> entry 4793 K3ST0006
 media/stage/default.sef              -> entry 4792 SEFF0001
 media/stage/envinfo.sea              -> entry 4799 SENV0002
 media/stage/distantview/distantview.bin -> entry 4795 DIST0002
-media/stage/distantview/*_distantview.wft -> entries 4794/4796/4797/4798 WFTX0010
-media/stage/water.wft                -> entries 4800..4803 WFTX0010
+media/stage/distantview/spring_distantview.wft -> entry 4796 WFTX0010
+media/stage/distantview/summer_distantview.wft -> entry 4797 WFTX0010
+media/stage/distantview/autumn_distantview.wft -> entry 4794 WFTX0010
+media/stage/distantview/winter_distantview.wft -> entry 4798 WFTX0010
+media/stage/ground/ground_spring.wft -> entry 4801 WFTX0010
+media/stage/ground/ground_summer.wft -> entry 4802 WFTX0010
+media/stage/ground/ground_autumn.wft -> entry 4800 WFTX0010
+media/stage/ground/ground_winter.wft -> entry 4803 WFTX0010
 media/stage/hex.wft                  -> entry 4804 WFTX0010
 media/stage/tree/tree_*.wft          -> entries 4840..4843 WFTX0010
 ```
@@ -219,22 +225,47 @@ Notes:
 
 - entry `4794` visually looks like a distant mountain/sky panorama, so the
   `distantview` binding is more plausible than mapping it to ground textures;
-- entries `4800..4803` are consecutive 64x64 24-bit WFTX payloads with
-  `unknown=36` and a large extra payload before the exported tile. IDB shows
-  `media/stage/water.wft` has a dedicated water loader/render path and
-  `WaterAnimTime`/`WaterRepetition` options, so these are now the best water
-  texture candidates;
+- entries `4800..4803` were previously treated as water candidates, but IDB
+  gives a stronger binding to `ground_*.wft`: `sub_40f2f0` indexes the
+  `ground_spring/summer/autumn/winter` path table and, on the packed-resource
+  branch, indexes the adjacent id table `0x12c1/0x12c2/0x12c0/0x12c3`, i.e.
+  LINK entries `4801/4802/4800/4803`;
+- each `4800..4803` payload is a multi-image WFTX block. IDB `sub_453110`
+  validates the `WFTX0010` magic, reads `u32@0x08` as declared block size, and
+  reads `u32@0x0c` as image count. For the ground entries that count is `36`.
+  `sub_452700` then reads each image as an 8-byte header
+  (`u16 width`, `u16 height`, `u8 bpp`, `u8 extra_blocks`, `u8 mip_count`,
+  `u8 flags`) followed by row-aligned pixel data and optional
+  `extra_blocks * 1024` bytes. `sub_44f280` creates one D3D texture per image,
+  locks each mip level, and copies pixels through `sub_454ee0/454e30`.
+  Therefore the previous `payload[32:] -> 1024x989 BGR atlas` interpretation was
+  wrong; the visible horizontal stripes came from concatenating 36 independent
+  textures as one linear bitmap;
 - entry `4804` is a 256x512 atlas with terrain/road/facility labels and
   direction glyphs, making it a plausible `hex.wft` candidate;
 - entry `4840` visually looks like a vegetation atlas, making `tree_*.wft ->
   4840..4843` more plausible than the earlier `4800..4803` WFTX group;
-- entries `4800..4803` should no longer be treated as tree textures without
-  stronger evidence.
+- `media/stage/water.wft` remains a confirmed first-class water render asset
+  by IDB xrefs, but its concrete LINK entry binding is unresolved after the
+  `4800..4803` ground binding correction.
+
+Seasonal color candidates:
+
+```text
+media/stage/color_spring.sea -> entry 4788 GCOL0001
+media/stage/color_summer.sea -> entry 4789 GCOL0001
+media/stage/color_autumn.sea -> entry 4787 GCOL0001
+media/stage/color_winter.sea -> entry 4790 GCOL0001
+```
+
+The `color_*.sea` extension differs from `GCOL0001`, but this mapping is no
+longer only filename ordering. IDB `sub_5a2ec0` indexes a color path table and
+an adjacent packed-resource id table with spring/summer/autumn/winter ids
+`0x12b4/0x12b5/0x12b3/0x12b6`, i.e. entries `4788/4789/4787/4790`.
 
 Low-confidence stage layout candidates:
 
 ```text
-media/stage/color_*.sea -> entries 4787..4790 GCOL0001
 entries 4864/4866/4868 -> data-buffer payloads after the stage cluster
 ```
 
@@ -250,6 +281,7 @@ Code xrefs found so far:
 
 ```text
 aMediaStageHexW   -> 0x40f596 in sub_40f510
+aMediaStageGrou*  -> 0x40f3e5 table access in sub_40f2f0
 aMediaStageBuil_1 -> 0x41d3b2 in sub_41d2e0
 aMediaStageWate   -> 0x422658 in sub_4224d0
 aMediaStageWate   -> 0x422f94 in sub_422eb0
@@ -275,6 +307,9 @@ Interpretation:
   expanded `control_b00`, then scales it by `0.5`; terrain classes `6..8` use
   `derived_b07` from the `0x415e20` table instead.
 - `sub_40f510` is a good target for `hex.wft`.
+- `sub_40f2f0` is the ground texture loader. Its path table order is
+  spring/summer/autumn/winter, and the packed-resource id table maps those
+  slots to `4801/4802/4800/4803`.
 - `sub_4224d0` and `sub_422eb0` are good targets for `water.wft`.
 - `sub_5a2a60` is a good target for `envinfo.sea`.
 - `sub_41d2e0` touches at least one building stage path directly.

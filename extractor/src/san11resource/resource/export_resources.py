@@ -30,9 +30,10 @@ from PIL import Image
 
 
 WFTX_MAGIC = b"WFTX0010"
-WFTX_HEADER_SIZE = 24
 LINK_MAGIC = b"LINK"
-SUPPORTED_WFTX_BPP = {24, 32}
+SUPPORTED_WFTX_BPP = {8, 24, 32}
+WFTX_CONTAINER_HEADER_SIZE = 16
+WFTX_IMAGE_HEADER_SIZE = 8
 
 
 @dataclass(frozen=True)
@@ -125,55 +126,99 @@ def sniff_payload(payload: bytes) -> str:
     return "raw"
 
 
-def parse_wftx_header(buf: bytes | mmap.mmap, offset: int = 0) -> dict[str, int] | None:
-    if offset + WFTX_HEADER_SIZE > len(buf):
+def wftx_level_layout(width: int, height: int, bpp: int, level: int) -> tuple[int, int, int, int]:
+    level_width = max(1, width >> level)
+    level_height = max(1, height >> level)
+    row_stride = (((level_width * bpp + 7) // 8) + 3) & ~3
+    return level_width, level_height, row_stride, row_stride * level_height
+
+
+def parse_wftx_header(buf: bytes | mmap.mmap, offset: int = 0) -> dict[str, object] | None:
+    if offset + WFTX_CONTAINER_HEADER_SIZE > len(buf):
         return None
     if bytes(buf[offset : offset + 8]) != WFTX_MAGIC:
         return None
 
-    declared_size, unknown, width, height, packed_bpp = struct.unpack_from("<IIHHI", buf, offset + 8)
-    bpp = packed_bpp & 0xFFFF
-    layer_count = packed_bpp >> 16
-    if layer_count == 0:
-        layer_count = 1
-
-    if width <= 0 or height <= 0:
+    declared_size, image_count = struct.unpack_from("<II", buf, offset + 8)
+    if declared_size < WFTX_CONTAINER_HEADER_SIZE or image_count == 0:
         return None
-    if bpp not in SUPPORTED_WFTX_BPP:
+    if offset + declared_size > len(buf):
         return None
 
-    bytes_per_pixel = bpp // 8
-    pixel_size = width * height * bytes_per_pixel
-    header_size = declared_size - pixel_size * layer_count
-    if header_size < WFTX_HEADER_SIZE:
-        return None
+    cursor = offset + WFTX_CONTAINER_HEADER_SIZE
+    images: list[dict[str, int]] = []
+    for image_index in range(image_count):
+        if cursor + WFTX_IMAGE_HEADER_SIZE > offset + declared_size:
+            return None
 
-    raw_start = offset + header_size
-    raw_end = raw_start + pixel_size * layer_count
-    if raw_end > len(buf):
-        return None
+        width, height, bpp, extra_blocks, mip_count, flags = struct.unpack_from("<HHBBBB", buf, cursor)
+        if width <= 0 or height <= 0 or bpp not in SUPPORTED_WFTX_BPP:
+            return None
 
-    exact_size = declared_size == header_size + pixel_size * layer_count
-    if declared_size < WFTX_HEADER_SIZE + pixel_size:
+        pixel_start = cursor + WFTX_IMAGE_HEADER_SIZE
+        pixel_size = 0
+        for level in range(mip_count + 1):
+            _level_width, _level_height, _row_stride, level_size = wftx_level_layout(width, height, bpp, level)
+            pixel_size += level_size
+
+        extra_start = pixel_start + pixel_size
+        extra_size = extra_blocks * 1024
+        next_cursor = extra_start + extra_size
+        if next_cursor > offset + declared_size:
+            return None
+
+        images.append(
+            {
+                "image_index": image_index,
+                "header_offset": cursor,
+                "width": width,
+                "height": height,
+                "bpp": bpp,
+                "extra_blocks": extra_blocks,
+                "mip_count": mip_count,
+                "flags": flags,
+                "pixel_start": pixel_start,
+                "pixel_size": pixel_size,
+                "extra_start": extra_start,
+                "extra_size": extra_size,
+                "next_offset": next_cursor,
+            }
+        )
+        cursor = next_cursor
+
+    if cursor != offset + declared_size:
         return None
 
     return {
         "declared_size": declared_size,
-        "unknown": unknown,
-        "width": width,
-        "height": height,
-        "bpp": bpp,
-        "packed_bpp": packed_bpp,
-        "layer_count": layer_count,
-        "header_size": header_size,
-        "pixel_size": pixel_size,
-        "raw_start": raw_start,
-        "raw_end": raw_end,
-        "exact_size": int(exact_size),
+        "image_count": image_count,
+        "images": images,
+        "exact_size": int(cursor == offset + declared_size),
     }
 
 
-def decode_wftx_pixels(raw: bytes, width: int, height: int, bpp: int) -> Image.Image:
+def decode_wftx_pixels(
+    raw: bytes,
+    width: int,
+    height: int,
+    bpp: int,
+    *,
+    row_stride: int | None = None,
+    palette: bytes = b"",
+) -> Image.Image:
+    bytes_per_row = (width * bpp + 7) // 8
+    if row_stride is not None and row_stride != bytes_per_row:
+        raw = b"".join(raw[y * row_stride : y * row_stride + bytes_per_row] for y in range(height))
+    if bpp == 8:
+        image = Image.frombytes("L", (width, height), raw)
+        if len(palette) >= 1024:
+            rgba = []
+            for index in range(256):
+                b, g, r, a = palette[index * 4 : index * 4 + 4]
+                rgba.extend((r, g, b, a))
+            image.putpalette(rgba, rawmode="RGBA")
+            return image.convert("RGBA")
+        return image
     if bpp == 24:
         return Image.frombytes("RGB", (width, height), raw, "raw", "BGR")
     if bpp == 32:
@@ -186,27 +231,42 @@ def save_wftx_png(
     offset: int,
     output_path: Path,
     *,
-    layer_index: int = 0,
-) -> tuple[dict[str, int], str]:
+    image_index: int = 0,
+    mip_level: int = 0,
+) -> tuple[dict[str, object], str]:
     header = parse_wftx_header(buf, offset)
     if header is None:
         raise ValueError("invalid or unsupported WFTX block")
-    if layer_index >= header["layer_count"]:
-        raise ValueError(f"layer index out of range: {layer_index}")
+    images = header["images"]
+    if not isinstance(images, list) or image_index >= len(images):
+        raise ValueError(f"image index out of range: {image_index}")
+    image_info = images[image_index]
+    if mip_level > image_info["mip_count"]:
+        raise ValueError(f"mip level out of range: {mip_level}")
 
-    pixel_start = header["raw_start"] + layer_index * header["pixel_size"]
-    pixel_end = pixel_start + header["pixel_size"]
+    level_start = image_info["pixel_start"]
+    for level in range(mip_level):
+        _width, _height, _row_stride, level_size = wftx_level_layout(
+            image_info["width"], image_info["height"], image_info["bpp"], level
+        )
+        level_start += level_size
+
+    width, height, row_stride, level_size = wftx_level_layout(
+        image_info["width"], image_info["height"], image_info["bpp"], mip_level
+    )
+    pixel_start = level_start
+    pixel_end = pixel_start + level_size
     raw = bytes(buf[pixel_start:pixel_end])
-    image = decode_wftx_pixels(raw, header["width"], header["height"], header["bpp"])
+    palette = bytes(buf[image_info["extra_start"] : image_info["extra_start"] + image_info["extra_size"]])
+    image = decode_wftx_pixels(raw, width, height, image_info["bpp"], row_stride=row_stride, palette=palette)
     ensure_dir(output_path.parent)
     image.save(output_path)
 
-    if header["layer_count"] > 1:
-        note = f"layer {layer_index + 1}/{header['layer_count']}"
-    elif header["exact_size"]:
-        note = ""
-    else:
-        note = "declared block contains extra payload after first texture"
+    note = (
+        f"image {image_index + 1}/{header['image_count']}; "
+        f"mip {mip_level}/{image_info['mip_count']}; "
+        f"extra_blocks={image_info['extra_blocks']}"
+    )
     return header, note
 
 
@@ -221,7 +281,8 @@ def iter_wftx_offsets(buf: bytes | mmap.mmap) -> Iterable[int]:
 
 
 def export_wftx_scan(input_path: Path, output_root: Path, *, limit: int | None = None) -> list[WftxRecord]:
-    source_dir = output_root / input_path.stem / "wftx"
+    source_root = output_root / input_path.stem
+    source_dir = source_root / "wftx"
     records: list[WftxRecord] = []
 
     with input_path.open("rb") as file:
@@ -232,11 +293,15 @@ def export_wftx_scan(input_path: Path, output_root: Path, *, limit: int | None =
                     continue
 
                 index = len(records)
-                size_dir = f"{header['width']}x{header['height']}_{header['bpp']}bpp"
-                for layer_index in range(header["layer_count"]):
-                    suffix = f"_layer{layer_index:02d}" if header["layer_count"] > 1 else ""
+                images = header["images"]
+                if not isinstance(images, list):
+                    continue
+                for image_info in images:
+                    image_index = image_info["image_index"]
+                    size_dir = f"{image_info['width']}x{image_info['height']}_{image_info['bpp']}bpp"
+                    suffix = f"_img{image_index:02d}" if header["image_count"] > 1 else ""
                     output_path = source_dir / size_dir / f"{index:05d}_{offset:08x}{suffix}.png"
-                    header, note = save_wftx_png(buf, offset, output_path, layer_index=layer_index)
+                    header, note = save_wftx_png(buf, offset, output_path, image_index=image_index)
 
                     records.append(
                         WftxRecord(
@@ -245,12 +310,12 @@ def export_wftx_scan(input_path: Path, output_root: Path, *, limit: int | None =
                             index=index,
                             offset=offset,
                             declared_size=header["declared_size"],
-                            unknown=header["unknown"],
-                            width=header["width"],
-                            height=header["height"],
-                            bpp=header["bpp"],
-                            layer_count=header["layer_count"],
-                            layer_index=layer_index,
+                            unknown=header["image_count"],
+                            width=image_info["width"],
+                            height=image_info["height"],
+                            bpp=image_info["bpp"],
+                            layer_count=header["image_count"],
+                            layer_index=image_index,
                             exact_size=bool(header["exact_size"]),
                             output=rel_output(output_path, output_root),
                             note=note,
@@ -309,16 +374,20 @@ def export_link(
                             raise ValueError("unsupported WFTX header")
 
                         outputs = []
-                        size_dir = f"{header['width']}x{header['height']}_{header['bpp']}bpp"
-                        for layer_index in range(header["layer_count"]):
-                            suffix = f"_layer{layer_index:02d}" if header["layer_count"] > 1 else ""
+                        images = header["images"]
+                        if not isinstance(images, list):
+                            raise ValueError("unsupported WFTX image table")
+                        for image_info in images:
+                            image_index = image_info["image_index"]
+                            size_dir = f"{image_info['width']}x{image_info['height']}_{image_info['bpp']}bpp"
+                            suffix = f"_img{image_index:02d}" if header["image_count"] > 1 else ""
                             output_path = (
                                 source_dir
                                 / "wftx"
                                 / size_dir
                                 / f"entry_{entry_index:05d}_{entry_offset:08x}{suffix}.png"
                             )
-                            header, note = save_wftx_png(payload, 0, output_path, layer_index=layer_index)
+                            header, note = save_wftx_png(payload, 0, output_path, image_index=image_index)
                             layer_output = rel_output(output_path, output_root)
                             outputs.append(layer_output)
 
@@ -329,20 +398,22 @@ def export_link(
                                     index=entry_index,
                                     offset=entry_offset,
                                     declared_size=header["declared_size"],
-                                    unknown=header["unknown"],
-                                    width=header["width"],
-                                    height=header["height"],
-                                    bpp=header["bpp"],
-                                    layer_count=header["layer_count"],
-                                    layer_index=layer_index,
+                                    unknown=header["image_count"],
+                                    width=image_info["width"],
+                                    height=image_info["height"],
+                                    bpp=image_info["bpp"],
+                                    layer_count=header["image_count"],
+                                    layer_index=image_index,
                                     exact_size=bool(header["exact_size"]),
                                     output=layer_output,
                                     note=note,
                                 )
                             )
                         output = ";".join(outputs)
-                        if header["layer_count"] > 1:
-                            note = f"{header['layer_count']} WFTX layers exported"
+                        if header["image_count"] > 1:
+                            note = f"{header['image_count']} WFTX images exported"
+                        else:
+                            note = ""
                     except Exception as exc:
                         kind = "raw"
                         note = f"wftx export failed: {exc}"
