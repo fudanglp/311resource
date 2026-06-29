@@ -10,7 +10,7 @@ import { Panel, PanelContent, PanelDescription, PanelHeader, PanelTitle } from "
 import { Select } from "../components/ui/select";
 import { repoFile, useRepoJson } from "../lib/data-client";
 import type { AimgRecord, FaceRecord, ModelRecord, WftxImageRecord } from "../lib/types";
-import { formatNumber, shortSource } from "../lib/utils";
+import { cn, formatNumber, shortSource } from "../lib/utils";
 
 type AssetMode = "faces" | "textures" | "models" | "aimg";
 
@@ -103,6 +103,7 @@ function FacesView({ faces }: { faces: FaceRecord[] }) {
   const safePage = Math.min(page, pageCount - 1);
   const start = safePage * pageSize;
   const visibleFaces = faces.slice(start, start + pageSize);
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const lightboxImages = useMemo<LightboxImage[]>(
     () =>
@@ -113,6 +114,8 @@ function FacesView({ faces }: { faces: FaceRecord[] }) {
       })),
     [visibleFaces]
   );
+  const safeSelectedIndex = Math.min(selectedIndex, Math.max(0, lightboxImages.length - 1));
+  const selectedImage = lightboxImages[safeSelectedIndex] ?? null;
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1fr_320px]">
@@ -159,29 +162,34 @@ function FacesView({ faces }: { faces: FaceRecord[] }) {
 
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 md:grid-cols-8 xl:grid-cols-10">
           {visibleFaces.map((face, index) => (
-            <figure key={face.index} className="overflow-hidden rounded-md border bg-background">
-              <button
-                type="button"
-                className="block w-full cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                onClick={() => setLightboxIndex(index)}
-                aria-label={`打开头像 ${face.index}`}
-              >
-                <img
-                  src={lightboxImages[index].src}
-                  alt={`face ${face.index}`}
-                  className="aspect-square w-full object-cover"
-                  loading="lazy"
-                />
-              </button>
+            <button
+              key={face.index}
+              type="button"
+              className={cn(
+                "overflow-hidden rounded-md border bg-background text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                index === safeSelectedIndex && "border-primary ring-1 ring-primary"
+              )}
+              onClick={() => setSelectedIndex(index)}
+            >
+              <img
+                src={lightboxImages[index].src}
+                alt={`face ${face.index}`}
+                className="aspect-square w-full object-cover"
+                loading="lazy"
+              />
               <figcaption className="border-t px-2 py-1 font-mono text-[11px] text-muted-foreground">
                 #{String(face.index).padStart(4, "0")}
               </figcaption>
-            </figure>
+            </button>
           ))}
         </div>
       </div>
-      <AssetNote
+      <AssetImageAside
         title="头像"
+        image={selectedImage}
+        imageIndex={safeSelectedIndex}
+        imageCount={lightboxImages.length}
+        onOpen={() => setLightboxIndex(safeSelectedIndex)}
         lines={[
           `${formatNumber(faces.length)} records`,
           `${formatNumber(pageCount)} pages`,
@@ -252,6 +260,7 @@ function TexturesView({ textures }: { textures: WftxImageRecord[] }) {
     .filter((row) => row.output && row.width <= 1024 && row.height <= 1024)
     .slice(0, 48);
   const nonFaceCount = textures.filter((texture) => !(texture.source ?? "").includes("/face/")).length;
+  const [selectedSampleIndex, setSelectedSampleIndex] = useState(0);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const lightboxImages = useMemo<LightboxImage[]>(
     () =>
@@ -262,6 +271,8 @@ function TexturesView({ textures }: { textures: WftxImageRecord[] }) {
       })),
     [samples]
   );
+  const safeSelectedSampleIndex = Math.min(selectedSampleIndex, Math.max(0, lightboxImages.length - 1));
+  const selectedTextureImage = lightboxImages[safeSelectedSampleIndex] ?? null;
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1fr_320px]">
@@ -324,30 +335,37 @@ function TexturesView({ textures }: { textures: WftxImageRecord[] }) {
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
             {samples.map((texture, index) => (
-              <figure key={`${texture.output}-${index}`} className="overflow-hidden rounded-md border bg-background">
-                <button
-                  type="button"
-                  className="flex aspect-square w-full cursor-zoom-in items-center justify-center bg-muted/40 p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  onClick={() => setLightboxIndex(index)}
-                  aria-label={`打开贴图 ${texture.index}`}
-                >
+              <button
+                key={`${texture.output}-${index}`}
+                type="button"
+                className={cn(
+                  "overflow-hidden rounded-md border bg-background text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  index === safeSelectedSampleIndex && "border-primary ring-1 ring-primary"
+                )}
+                onClick={() => setSelectedSampleIndex(index)}
+              >
+                <div className="flex aspect-square w-full items-center justify-center bg-muted/40 p-2">
                   <img
                     src={lightboxImages[index].src}
                     alt={`texture ${texture.index}`}
                     className="max-h-full max-w-full object-contain"
                     loading="lazy"
                   />
-                </button>
+                </div>
                 <figcaption className="truncate border-t px-2 py-1 font-mono text-[11px] text-muted-foreground">
                   #{texture.index} {texture.width}x{texture.height}
                 </figcaption>
-              </figure>
+              </button>
             ))}
           </div>
         </div>
       </div>
-      <AssetNote
+      <AssetImageAside
         title="WFTX 贴图"
+        image={selectedTextureImage}
+        imageIndex={safeSelectedSampleIndex}
+        imageCount={lightboxImages.length}
+        onOpen={() => setLightboxIndex(safeSelectedSampleIndex)}
         lines={[
           `${formatNumber(textures.length)} records`,
           `${formatNumber(nonFaceCount)} non-face records`,
@@ -403,6 +421,7 @@ function ModelsView({ models }: { models: ModelRecord[] }) {
 function AimgView({ records }: { records: AimgRecord[] }) {
   const entries = new Set(records.map((record) => record.entry));
   const groups = new Set(records.map((record) => record.group));
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const lightboxImages = useMemo<LightboxImage[]>(
     () =>
@@ -413,28 +432,36 @@ function AimgView({ records }: { records: AimgRecord[] }) {
       })),
     []
   );
+  const selectedImage = lightboxImages[selectedIndex] ?? null;
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1fr_320px]">
       <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
         {aimgOverlaySamples.map((path, index) => (
-          <figure key={path} className="overflow-hidden rounded-md border bg-background">
-            <button
-              type="button"
-              className="flex aspect-[4/3] w-full cursor-zoom-in items-center justify-center bg-muted/40 p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              onClick={() => setLightboxIndex(index)}
-              aria-label={`打开 AIMG ${path.split("/").pop()}`}
-            >
+          <button
+            key={path}
+            type="button"
+            className={cn(
+              "overflow-hidden rounded-md border bg-background text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              index === selectedIndex && "border-primary ring-1 ring-primary"
+            )}
+            onClick={() => setSelectedIndex(index)}
+          >
+            <div className="flex aspect-[4/3] w-full items-center justify-center bg-muted/40 p-2">
               <img src={lightboxImages[index].src} alt={path.split("/").pop()} className="max-h-full max-w-full object-contain" loading="lazy" />
-            </button>
+            </div>
             <figcaption className="truncate border-t px-2 py-1 font-mono text-[11px] text-muted-foreground">
               {path.split("/").pop()}
             </figcaption>
-          </figure>
+          </button>
         ))}
       </div>
-      <AssetNote
+      <AssetImageAside
         title="AIMG 覆盖"
+        image={selectedImage}
+        imageIndex={selectedIndex}
+        imageCount={lightboxImages.length}
+        onOpen={() => setLightboxIndex(selectedIndex)}
         lines={[
           `${formatNumber(records.length)} records`,
           `${formatNumber(entries.size)} entries`,
@@ -451,13 +478,39 @@ function AimgView({ records }: { records: AimgRecord[] }) {
   );
 }
 
-function AssetNote({ lines, title }: { lines: string[]; title: string }) {
+function AssetImageAside({
+  image,
+  imageCount,
+  imageIndex,
+  lines,
+  onOpen,
+  title
+}: {
+  image: LightboxImage | null;
+  imageCount: number;
+  imageIndex: number;
+  lines: string[];
+  onOpen: () => void;
+  title: string;
+}) {
   return (
     <aside className="rounded-md border bg-muted/30 p-4">
       <div className="flex items-center justify-between gap-3">
         <div className="text-sm font-semibold">{title}</div>
-        <Badge variant="outline">local</Badge>
+        <Badge variant="outline">
+          {imageCount > 0 ? `${imageIndex + 1} / ${imageCount}` : "local"}
+        </Badge>
       </div>
+      <button
+        type="button"
+        className="mt-3 flex aspect-square w-full cursor-zoom-in items-center justify-center rounded-md border bg-background p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-60"
+        onClick={onOpen}
+        disabled={!image}
+        aria-label={image ? `打开 ${image.title}` : "无可用图片"}
+      >
+        {image ? <img src={image.src} alt={image.title} className="max-h-full max-w-full object-contain" /> : null}
+      </button>
+      {image?.detail ? <div className="mt-2 break-all font-mono text-[11px] text-muted-foreground">{image.detail}</div> : null}
       <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
         {lines.map((line) => (
           <li key={line}>{line}</li>

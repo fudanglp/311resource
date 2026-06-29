@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight, ExternalLink, X } from "lucide-react";
+import { useEffect } from "react";
 import { Button } from "./ui/button";
 
 export type LightboxImage = {
@@ -26,6 +27,25 @@ export function ImageLightbox({
   const image = images[safeIndex];
   const hasPrevious = safeIndex > 0;
   const hasNext = safeIndex < images.length - 1;
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+
+      if (event.key === "ArrowLeft" && hasPrevious) {
+        onIndexChange(safeIndex - 1);
+      }
+
+      if (event.key === "ArrowRight" && hasNext) {
+        onIndexChange(safeIndex + 1);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [hasNext, hasPrevious, onClose, onIndexChange, safeIndex]);
 
   return (
     <div
