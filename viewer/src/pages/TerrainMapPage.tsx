@@ -19,18 +19,31 @@ type HeightSampleMode = "left" | "right" | "full";
 const heightLayers: TextureOption[] = [
   {
     id: "control-b00",
-    label: "K3ST control b00",
+    label: "K3ST height b00",
     path: "extracted/maps/candidates/san11pkres/entry_04793_1f58cc67_K3ST0006/entry_04793_1f58cc67_K3ST0006_control_b00_map.png"
+  }
+];
+
+const diagnosticLayers: TextureOption[] = [
+  {
+    id: "none",
+    label: "无",
+    path: ""
   },
   {
-    id: "idb-ground-height",
-    label: "IDB ground height byte",
-    path: "extracted/maps/candidates/san11pkres/entry_04793_1f58cc67_K3ST0006/entry_04793_1f58cc67_K3ST0006_idb_ground_height_byte_map.png"
+    id: "control-b01",
+    label: "K3ST diffuse red b01",
+    path: "extracted/maps/candidates/san11pkres/entry_04793_1f58cc67_K3ST0006/entry_04793_1f58cc67_K3ST0006_control_b01_map.png"
   },
   {
     id: "control-b02",
-    label: "K3ST control b02",
+    label: "K3ST diffuse green b02",
     path: "extracted/maps/candidates/san11pkres/entry_04793_1f58cc67_K3ST0006/entry_04793_1f58cc67_K3ST0006_control_b02_map.png"
+  },
+  {
+    id: "control-b03",
+    label: "K3ST diffuse blue b03",
+    path: "extracted/maps/candidates/san11pkres/entry_04793_1f58cc67_K3ST0006/entry_04793_1f58cc67_K3ST0006_control_b03_map.png"
   },
   {
     id: "aux-b00",
@@ -39,8 +52,23 @@ const heightLayers: TextureOption[] = [
   },
   {
     id: "aux-b05",
-    label: "K3ST aux water bits b05",
+    label: "K3ST aux raw byte b05",
     path: "extracted/maps/candidates/san11pkres/entry_04793_1f58cc67_K3ST0006/entry_04793_1f58cc67_K3ST0006_aux_qword_b05_map.png"
+  },
+  {
+    id: "aux-water-height",
+    label: "K3ST aux bits44-51 water height",
+    path: "extracted/maps/candidates/san11pkres/entry_04793_1f58cc67_K3ST0006/entry_04793_1f58cc67_K3ST0006_aux_bits44_51_water_height_map.png"
+  },
+  {
+    id: "aux-has-water",
+    label: "K3ST aux bits44-51 water mask",
+    path: "extracted/maps/candidates/san11pkres/entry_04793_1f58cc67_K3ST0006/entry_04793_1f58cc67_K3ST0006_aux_bits44_51_has_water_map.png"
+  },
+  {
+    id: "aux-water-flags",
+    label: "K3ST aux bits52-53 water flags",
+    path: "extracted/maps/candidates/san11pkres/entry_04793_1f58cc67_K3ST0006/entry_04793_1f58cc67_K3ST0006_aux_bits52_53_water_flags_map.png"
   },
   {
     id: "derived-b07",
@@ -55,6 +83,11 @@ const heightLayers: TextureOption[] = [
 ];
 
 const colorLayers: TextureOption[] = [
+  {
+    id: "k3st-diffuse",
+    label: "K3ST diffuse b01/b02/b03",
+    path: "extracted/maps/candidates/san11pkres/entry_04793_1f58cc67_K3ST0006/entry_04793_1f58cc67_K3ST0006_control_diffuse_b01_b02_b03_map_rgb.png"
+  },
   {
     id: "gcol-4787",
     label: "GCOL 4787",
@@ -101,14 +134,16 @@ const waterTextures: TextureOption[] = [
 ];
 
 const waterMaskPath =
-  "extracted/maps/candidates/san11pkres/entry_04793_1f58cc67_K3ST0006/entry_04793_1f58cc67_K3ST0006_aux_qword_b05_map.png";
+  "extracted/maps/candidates/san11pkres/entry_04793_1f58cc67_K3ST0006/entry_04793_1f58cc67_K3ST0006_aux_bits44_51_has_water_map.png";
 
 const meshSegments = 256;
 const terrainSize = 720;
 
 export function TerrainMapPage() {
   const [heightLayerId, setHeightLayerId] = useState(heightLayers[0].id);
-  const [colorLayerId, setColorLayerId] = useState(colorLayers[0].id);
+  const [colorLayerId, setColorLayerId] = useState("gcol-4787");
+  const [diagnosticLayerId, setDiagnosticLayerId] = useState(diagnosticLayers[0].id);
+  const [diagnosticOpacity, setDiagnosticOpacity] = useState(45);
   const [heightScale, setHeightScale] = useState(18);
   const [heightBias, setHeightBias] = useState(0);
   const [seaLevel, setSeaLevel] = useState(0);
@@ -123,12 +158,15 @@ export function TerrainMapPage() {
 
   const heightLayer = heightLayers.find((layer) => layer.id === heightLayerId) ?? heightLayers[0];
   const colorLayer = colorLayers.find((layer) => layer.id === colorLayerId) ?? colorLayers[0];
+  const diagnosticLayer = diagnosticLayers.find((layer) => layer.id === diagnosticLayerId) ?? diagnosticLayers[0];
   const waterTexture = waterTextures.find((texture) => texture.id === waterTextureId) ?? waterTextures[0];
 
   return (
     <div className="relative h-full min-h-[620px] overflow-hidden bg-[#d6ddd2]">
       <TerrainViewport
         colorUrl={repoFile(colorLayer.path)}
+        diagnosticOpacity={diagnosticLayer.id === "none" ? 0 : diagnosticOpacity / 100}
+        diagnosticUrl={diagnosticLayer.id === "none" ? repoFile(heightLayer.path) : repoFile(diagnosticLayer.path)}
         heightBias={heightBias}
         heightSampleMode={heightSampleMode}
         heightScale={heightScale}
@@ -151,14 +189,24 @@ export function TerrainMapPage() {
             <h1 className="text-sm font-semibold">3D 世界地图</h1>
           </div>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            K3ST 诊断视图。control b00 更接近视觉地形；derived water height 是水/河分支会读取的派生层。
+            K3ST 诊断视图。b00 驱动地形高度；b01/b02/b03 可作为 terrain diffuse 颜色层。
           </p>
         </div>
 
-        <div className="pointer-events-auto grid w-full max-w-[920px] gap-3 rounded-md border border-white/50 bg-white/88 p-3 shadow-lg backdrop-blur md:grid-cols-2 xl:grid-cols-5">
-          <ControlBlock label="诊断层">
+        <div className="pointer-events-auto grid max-h-[calc(100vh-15rem)] w-full max-w-[920px] gap-3 overflow-y-auto rounded-md border border-white/50 bg-white/88 p-3 shadow-lg backdrop-blur md:grid-cols-2 lg:max-h-none lg:overflow-visible xl:grid-cols-5">
+          <ControlBlock label="高度源">
             <Select value={heightLayerId} onChange={(event) => setHeightLayerId(event.target.value)} className="w-full">
               {heightLayers.map((layer) => (
+                <option key={layer.id} value={layer.id}>
+                  {layer.label}
+                </option>
+              ))}
+            </Select>
+          </ControlBlock>
+
+          <ControlBlock label="诊断叠加">
+            <Select value={diagnosticLayerId} onChange={(event) => setDiagnosticLayerId(event.target.value)} className="w-full">
+              {diagnosticLayers.map((layer) => (
                 <option key={layer.id} value={layer.id}>
                   {layer.label}
                 </option>
@@ -191,6 +239,7 @@ export function TerrainMapPage() {
           <RangeControl label="高度倍率" max={40} min={0} onChange={setHeightScale} value={heightScale} />
           <RangeControl label="高度偏移" max={30} min={-30} onChange={setHeightBias} value={heightBias} />
           <RangeControl label="海平面" max={40} min={-50} onChange={setSeaLevel} value={seaLevel} />
+          <RangeControl label="诊断透明" max={100} min={0} onChange={setDiagnosticOpacity} value={diagnosticOpacity} />
 
           <ControlBlock label="水面贴图">
             <Select value={waterTextureId} onChange={(event) => setWaterTextureId(event.target.value)} className="w-full">
@@ -216,6 +265,9 @@ export function TerrainMapPage() {
                 variant="outline"
                 onClick={() => {
                   setHeightLayerId(heightLayers[0].id);
+                  setColorLayerId("gcol-4787");
+                  setDiagnosticLayerId(diagnosticLayers[0].id);
+                  setDiagnosticOpacity(45);
                   setHeightScale(18);
                   setHeightBias(0);
                   setSeaLevel(0);
@@ -234,7 +286,7 @@ export function TerrainMapPage() {
         </div>
       </div>
 
-      <div className="pointer-events-none absolute bottom-4 left-4 z-10 rounded-md border border-white/50 bg-white/86 px-3 py-2 text-xs text-muted-foreground shadow-lg backdrop-blur">
+      <div className="pointer-events-none absolute bottom-4 left-4 z-10 hidden rounded-md border border-white/50 bg-white/86 px-3 py-2 text-xs text-muted-foreground shadow-lg backdrop-blur sm:block">
         拖拽旋转，滚轮缩放，右键平移
       </div>
     </div>
@@ -243,6 +295,8 @@ export function TerrainMapPage() {
 
 function TerrainViewport({
   colorUrl,
+  diagnosticOpacity,
+  diagnosticUrl,
   heightBias,
   heightSampleMode,
   heightScale,
@@ -258,6 +312,8 @@ function TerrainViewport({
   wireframe
 }: {
   colorUrl: string;
+  diagnosticOpacity: number;
+  diagnosticUrl: string;
   heightBias: number;
   heightSampleMode: HeightSampleMode;
   heightScale: number;
@@ -289,6 +345,8 @@ function TerrainViewport({
       <Suspense fallback={<ViewportMessage />}>
         <TerrainMesh
           colorUrl={colorUrl}
+          diagnosticOpacity={diagnosticOpacity}
+          diagnosticUrl={diagnosticUrl}
           heightBias={heightBias}
           heightSampleMode={heightSampleMode}
           heightScale={heightScale}
@@ -335,6 +393,8 @@ function CameraTarget() {
 
 function TerrainMesh({
   colorUrl,
+  diagnosticOpacity,
+  diagnosticUrl,
   heightBias,
   heightSampleMode,
   heightScale,
@@ -342,13 +402,15 @@ function TerrainMesh({
   wireframe
 }: {
   colorUrl: string;
+  diagnosticOpacity: number;
+  diagnosticUrl: string;
   heightBias: number;
   heightSampleMode: HeightSampleMode;
   heightScale: number;
   heightUrl: string;
   wireframe: boolean;
 }) {
-  const [diffuseTexture, heightTexture] = useLoader(THREE.TextureLoader, [colorUrl, heightUrl]);
+  const [diffuseTexture, heightTexture, diagnosticTexture] = useLoader(THREE.TextureLoader, [colorUrl, heightUrl, diagnosticUrl]);
 
   useEffect(() => {
     diffuseTexture.colorSpace = THREE.SRGBColorSpace;
@@ -356,13 +418,21 @@ function TerrainMesh({
     diffuseTexture.wrapS = THREE.ClampToEdgeWrapping;
     diffuseTexture.wrapT = THREE.ClampToEdgeWrapping;
     configureHeightTexture(heightTexture, heightSampleMode);
-  }, [diffuseTexture, heightSampleMode, heightTexture]);
+    diagnosticTexture.colorSpace = THREE.NoColorSpace;
+    diagnosticTexture.wrapS = THREE.ClampToEdgeWrapping;
+    diagnosticTexture.wrapT = THREE.ClampToEdgeWrapping;
+    diagnosticTexture.minFilter = THREE.LinearFilter;
+    diagnosticTexture.magFilter = THREE.LinearFilter;
+    diagnosticTexture.needsUpdate = true;
+  }, [diagnosticTexture, diffuseTexture, heightSampleMode, heightTexture]);
 
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]}>
       <planeGeometry args={[terrainSize, terrainSize, meshSegments, meshSegments]} />
       <TerrainMaterial
         colorMap={diffuseTexture}
+        diagnosticMap={diagnosticTexture}
+        diagnosticOpacity={diagnosticOpacity}
         heightBias={heightBias}
         heightMap={heightTexture}
         heightSampleMode={heightSampleMode}
@@ -395,6 +465,8 @@ function configureHeightTexture(texture: THREE.Texture, heightSampleMode: Height
 
 function TerrainMaterial({
   colorMap,
+  diagnosticMap,
+  diagnosticOpacity,
   heightBias,
   heightMap,
   heightSampleMode,
@@ -402,6 +474,8 @@ function TerrainMaterial({
   wireframe
 }: {
   colorMap: THREE.Texture;
+  diagnosticMap: THREE.Texture;
+  diagnosticOpacity: number;
   heightBias: number;
   heightMap: THREE.Texture;
   heightSampleMode: HeightSampleMode;
@@ -411,12 +485,14 @@ function TerrainMaterial({
   const uniforms = useMemo(
     () => ({
       colorMap: { value: colorMap },
+      diagnosticMap: { value: diagnosticMap },
+      diagnosticOpacity: { value: diagnosticOpacity },
       heightBias: { value: heightBias },
       heightMap: { value: heightMap },
       heightSampleMode: { value: sampleModeToUniform(heightSampleMode) },
       heightScale: { value: heightScale }
     }),
-    [colorMap, heightBias, heightMap, heightSampleMode, heightScale]
+    [colorMap, diagnosticMap, diagnosticOpacity, heightBias, heightMap, heightSampleMode, heightScale]
   );
 
   return (
@@ -470,6 +546,8 @@ const terrainVertexShader = `
 
 const terrainFragmentShader = `
   uniform sampler2D colorMap;
+  uniform sampler2D diagnosticMap;
+  uniform float diagnosticOpacity;
 
   varying float vHeight;
   varying vec2 vUv;
@@ -479,6 +557,9 @@ const terrainFragmentShader = `
     float shade = mix(0.72, 1.12, smoothstep(0.08, 0.9, vHeight));
     vec3 fogTint = vec3(0.78, 0.84, 0.76);
     vec3 color = mix(baseColor * shade, fogTint, 0.08);
+    float diagnosticValue = texture2D(diagnosticMap, vUv).r;
+    vec3 diagnosticColor = vec3(diagnosticValue);
+    color = mix(color, diagnosticColor, diagnosticOpacity);
     gl_FragColor = vec4(color, 1.0);
   }
 `;

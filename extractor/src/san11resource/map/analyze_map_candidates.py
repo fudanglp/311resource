@@ -212,28 +212,55 @@ def expand_k3st_idb_ground_height_byte(control: bytes) -> bytes:
     """Recreate the ordinary-ground byte read by the IDB height helpers.
 
     `sub_418fb0` expands each 8-byte K3ST control record at `this+0x800008`.
-    The vertex helpers read from `this+0x800000 + index*10`, so this is not the
-    same record's byte 0. For normal ground it effectively reads the previous
-    expanded record's byte 2. Water/river terrain takes a different branch.
+    The known call sites pass `this+8` into `0x4176b0/0x417770`, so their
+    `ecx+0x800000+index*10` access lands on the expanded record's byte 0.
+    Water/river terrain takes a different branch through the derived table.
     """
-    runtime = bytearray(K3ST_CONTROL_WIDTH * K3ST_CONTROL_HEIGHT * 10 + 16)
-    for record_index in range(K3ST_CONTROL_WIDTH * K3ST_CONTROL_HEIGHT):
-        source_start = record_index * K3ST_CONTROL_STRIDE
-        source = control[source_start : source_start + K3ST_CONTROL_STRIDE]
-        target_start = 8 + record_index * 10
-        runtime[target_start : target_start + 8] = source
-        runtime[target_start + 8] = source[0]
-
     height = bytearray(K3ST_CONTROL_WIDTH * K3ST_CONTROL_HEIGHT)
     for record_index in range(K3ST_CONTROL_WIDTH * K3ST_CONTROL_HEIGHT):
-        height[record_index] = runtime[record_index * 10]
+        height[record_index] = control[record_index * K3ST_CONTROL_STRIDE]
     return bytes(height)
+
+
+def extract_k3st_control_diffuse_rgb(control: bytes) -> bytes:
+    """Extract the terrain diffuse RGB triplet packed by the ground writer.
+
+    `sub_41dc00` packs expanded record bytes +1/+2/+3 into a D3D diffuse
+    color shaped as `alpha<<24 | b01<<16 | b02<<8 | b03`.
+    """
+    rgb = bytearray(K3ST_CONTROL_WIDTH * K3ST_CONTROL_HEIGHT * 3)
+    for record_index in range(K3ST_CONTROL_WIDTH * K3ST_CONTROL_HEIGHT):
+        source_start = record_index * K3ST_CONTROL_STRIDE + 1
+        target_start = record_index * 3
+        rgb[target_start : target_start + 3] = control[source_start : source_start + 3]
+    return bytes(rgb)
 
 
 def get_k3st_control_b00(control: bytes, x: int, y: int) -> int:
     x = max(0, min(K3ST_CONTROL_WIDTH - 1, x))
     y = max(0, min(K3ST_CONTROL_HEIGHT - 1, y))
     return control[(y * K3ST_CONTROL_WIDTH + x) * K3ST_CONTROL_STRIDE]
+
+
+def extract_k3st_aux_water_fields(aux: bytes) -> tuple[bytes, bytes, bytes]:
+    """Extract qword bitfields consumed by the IDB water-table builder.
+
+    `sub_415e20` uses qword bit extraction, so these fields intentionally cross
+    byte boundaries. `aux_qword_b05` is useful visually, but it is only a raw
+    byte slice through this bitfield layout.
+    """
+    height = bytearray(K3ST_AUX_WIDTH * K3ST_AUX_HEIGHT)
+    has_water = bytearray(K3ST_AUX_WIDTH * K3ST_AUX_HEIGHT)
+    flags = bytearray(K3ST_AUX_WIDTH * K3ST_AUX_HEIGHT)
+
+    for index in range(K3ST_AUX_WIDTH * K3ST_AUX_HEIGHT):
+        value = struct.unpack_from("<Q", aux, index * K3ST_AUX_STRIDE)[0]
+        water_height = (value >> 44) & 0xFF
+        height[index] = water_height
+        has_water[index] = 0xFF if water_height else 0
+        flags[index] = (value >> 52) & 0x03
+
+    return bytes(height), bytes(has_water), bytes(flags)
 
 
 def derive_k3st_water_table(control: bytes, aux: bytes) -> bytes:
@@ -302,6 +329,17 @@ def save_k3st_channels(data: bytes, output_dir: Path, stem: str) -> list[str]:
         )
     )
 
+    diffuse_rgb = extract_k3st_control_diffuse_rgb(control)
+    paths.extend(
+        save_rgb_and_channels(
+            diffuse_rgb,
+            K3ST_CONTROL_WIDTH,
+            K3ST_CONTROL_HEIGHT,
+            output_dir,
+            f"{stem}_control_diffuse_b01_b02_b03",
+        )
+    )
+
     for channel in range(K3ST_AUX_STRIDE):
         channel_bytes = bytes(aux[index] for index in range(channel, len(aux), K3ST_AUX_STRIDE))
         paths.extend(
@@ -313,6 +351,35 @@ def save_k3st_channels(data: bytes, output_dir: Path, stem: str) -> list[str]:
                 f"{stem}_aux_qword_b{channel:02d}",
             )
         )
+
+    aux_water_height, aux_has_water, aux_water_flags = extract_k3st_aux_water_fields(aux)
+    paths.extend(
+        save_grayscale_and_map(
+            aux_water_height,
+            K3ST_AUX_WIDTH,
+            K3ST_AUX_HEIGHT,
+            output_dir,
+            f"{stem}_aux_bits44_51_water_height",
+        )
+    )
+    paths.extend(
+        save_grayscale_and_map(
+            aux_has_water,
+            K3ST_AUX_WIDTH,
+            K3ST_AUX_HEIGHT,
+            output_dir,
+            f"{stem}_aux_bits44_51_has_water",
+        )
+    )
+    paths.extend(
+        save_grayscale_and_map(
+            aux_water_flags,
+            K3ST_AUX_WIDTH,
+            K3ST_AUX_HEIGHT,
+            output_dir,
+            f"{stem}_aux_bits52_53_water_flags",
+        )
+    )
 
     derived = derive_k3st_water_table(control, aux)
     for channel in range(K3ST_DERIVED_STRIDE):
@@ -393,6 +460,9 @@ def analyze_payload(source: Path, entry: int, offset: int, payload: bytes, outpu
         image_paths = save_k3st_channels(payload, output_dir, stem)
         notes.append("parsed_using_idb_stage_loader=sub_418fb0")
         notes.append("idb_ground_height_byte_matches_0x4176b0/0x417770 ordinary-ground sampling")
+        notes.append("control_diffuse_b01_b02_b03_matches_sub_41dc00 terrain diffuse packing")
+        notes.append("aux_bits44_51_matches_water/river qword field consumed by sub_415e20")
+        notes.append("aux_bits52_53_matches_water/river flag bits consumed by sub_415e20")
         notes.append("derived_b07_matches_water/river auxiliary height byte built by sub_415e20")
         notes.append("derived_b08_matches_control_b00_corner_comparison mask built by sub_415d80")
         notes.append("images=" + ",".join(Path(path).name for path in image_paths))

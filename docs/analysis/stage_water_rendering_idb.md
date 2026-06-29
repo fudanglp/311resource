@@ -256,7 +256,7 @@ terrain pass:
   K3ST/GCOL remain channel/color evidence until their runtime role is proven
 
 water pass:
-  water mask selects visible water cells
+  K3ST aux bits44..51 provide the current best visible-water mask/height field
   water.wft provides repeated/animated 64x64 tile candidates
   vertex diffuse alpha adds local fade/highlight variation
   WaterAnimTime and WaterRepetition control animation speed/repetition
@@ -264,7 +264,9 @@ water pass:
 
 For the frontend, this means sea rendering should eventually be a separate
 transparent mesh/pass over the terrain, with optional UV scrolling or entry
-selection from the `4800..4803` WFTX tiles. The terrain shader should stop
-trying to explain all water color from GCOL/K3ST sampling alone. The large WFTX
-extra payload in these entries remains unresolved and should not be called a
-decoded layer stack yet.
+selection from the `4800..4803` WFTX tiles. The current diagnostic viewer uses
+`aux_bits44_51_has_water` as the mask because it matches the IDB field consumed
+by `sub_415e20`; raw `aux_qword_b05` remains a useful visual proxy but not a
+runtime field name. The terrain shader should stop trying to explain all water
+color from GCOL/K3ST sampling alone. The large WFTX extra payload in these
+entries remains unresolved and should not be called a decoded layer stack yet.

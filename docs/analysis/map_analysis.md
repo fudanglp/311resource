@@ -106,7 +106,7 @@ staggered_x = x + 0.5 * row_parity
 1024*1024*8 bytes  auxiliary qword bitfield plane
 ```
 
-  导出器现在输出 `control_b00..b07`、按 IDB 普通地面采样 offset 复原的 `idb_ground_height_byte`、`aux_qword_b00..b07`，以及按 `0x415e20/0x415d80` 复原的 `derived_b00..b09`。需要注意：`idb_ground_height_byte` 只对应普通地面分支；水/河等特殊地形会改读派生表，见下文。
+  导出器现在输出 `control_b00..b07`、按 IDB 普通地面采样 offset 复原的 `idb_ground_height_byte`、由 `control_b01/b02/b03` 合成的 `control_diffuse_b01_b02_b03`、`aux_qword_b00..b07`，以及按 `0x415e20/0x415d80` 复原的 `derived_b00..b09`。需要注意：`control_b00` 已有 IDB 地形高度/control byte 证据；`idb_ground_height_byte` 是同一个 b00 高度字段在 `0x4176b0/0x417770` 调用约定下的复核导出；水/河等特殊地形会改读派生表，见下文。
 - `OBJS0004`：8 字节 magic 后的 payload 精确等于 `65535 * 14`。非零记录只有 1195 条。当前最佳字段拆分：
 
 ```text
@@ -127,9 +127,10 @@ byte 12..13 未知，active record 中目前为 0
 游戏实际渲染中的世界地图是 3D 场景：西北方向有明显高山，东南方向有大片海面。这使地图资源不能只按 2D 预览图理解。当前更合理的模型是：
 
 - `SHEX0008` 提供 `200 x 200` 逻辑格子、地形/移动分类和若干低分辨率索引字段；
-- `K3ST0006` 是 `default.stg` 的强候选，承载 3D stage 地形控制数据。`control_b00` 在视觉上更像水低、山高的地形代理层；IDB 普通地面高度采样则读 `this+0x800000 + index*10`，对应展开后前一条 control record 的 `b02`。这两者不能混为一谈；
+- `K3ST0006` 是 `default.stg` 的强候选，承载 3D stage 地形控制数据。`control_b00` 不只是视觉代理：`sub_418fb0` 会把原始 `control_b00` 展开到 `this+0x800008+index*10`，`sub_415bb0/4163b0` 直接读取这个 byte 并用 `0.5` 缩放，`sub_41f5f0` 的 ground draw path 又通过 `41dcb0/41e7a0/41eb60` 读取同一运行时 record 生成顶点后调用 `DrawIndexedPrimitive`。`0x4176b0/0x417770` 的已知调用点传入 `this+8`，因此它的 `ecx+0x800000+index*10` 也落到展开后的 `control_b00`；
+- `control_b01..b03` 更像 terrain diffuse color。`sub_41dc00` 对地形 record 指针打包 `[+1]`、`[+2]`、`[+3]` 为 `alpha<<24 | b01<<16 | b02<<8 | b03`，并在某些 flag 下对三个分量统一减亮度。因此 `control_b02` 从代码上看是 diffuse green/brightness 分量，而不是高度；
 - K3ST 后半 8MB 在 IDB 中按 `1024x1024` 个 qword bitfield 使用，而不是按 `2048x2048` u16 高度图使用。`0x415e20` 从每个 `4x4` qword block 中提取派生表，`derived_b07` 是水/河高度分支读取的 byte，`derived_b08` 是 `0x415d80` 对四角 `control_b00` 与该高度比较得到的 4-bit mask；
-- `aux_qword_b05` 视觉上非常像水域 mask：水/河/海区域值高，其他区域接近 0。按 `0x415e20` 的 qword bit extraction，它不是独立二值 mask，而是 qword bitfield 的一部分；`derived_b07 = (qword >> 44) & 0xff` 会使用到 `b05` 的高 nibble 和 `b06` 的低 nibble。因此它应命名为水域相关 bitfield byte，而不是最终水面 mask；
+- `aux_qword_b05` 视觉上非常像水域 mask：水/河/海区域值高，其他区域接近 0。但 IDB 没有按 byte 5 直接读取它。`0x415e20` 通过 qword shift helper 读取 `bits44..51` 作为水/河高度字段，并读取 `bits52..53` 写入派生表 flags；`bits44..51` 跨过 `b05` 高 nibble 和 `b06` 低 nibble。因此 `aux_qword_b05` 只能当 raw bitfield byte 观察，真正可命名字段是导出器的 `aux_bits44_51_water_height`、`aux_bits44_51_has_water` 和 `aux_bits52_53_water_flags`；
 - `GCOL0001` 更像季节/颜色预览或颜色层，不适合作为权威 grid 数据；
 - `default.stg` 附近的 data-buffer/descriptor pair 目前只暴露 `2`/`4` 字节 stream，形态更像分批索引、短属性或渲染辅助流，而不是 `default.stg` 本体。`default.stg` 现在应优先绑定到 `K3ST0006`。
 
@@ -138,16 +139,17 @@ byte 12..13 未知，active record 中目前为 0
 - 曹操教程场景截图中，底部状态栏显示当前格为 `地形：河（濮陽）`、`坐标：125,65`。
 - 真实画面里 `125,65` 附近是黄河/港口/河谷区域，水面是连续低洼面，山体主要表现为局部坡面、山脊和地表贴图变化；白色雾/水汽沿河谷和低地区域出现，不是全图均匀云层。
 - `SHEX0008` 在 `(125,65)` 的字段为 `b00=0,b01=30,b04=6,b09=14`，相邻河/陆过渡格会在 `b00` 和 `b01` 上变化，例如 `(120,65)` 为 `b00=15,b01=29`、`(130,65)` 为 `b00=5,b01=30`。这说明低分辨率逻辑格子能直接标出“河”及其相邻过渡。
-- 按 IDB 的 `0x417770` 坐标换算，逻辑格 `(125,65)` 映射到 K3ST control 坐标约 `(614,376)`。该点附近 `control_b00=0`，符合河/水低洼的视觉直觉；普通地面路径读到的 `idb_ground_height_byte=136`，但截图显示该格为“河”，而 IDB 在 `0x417770` 对 runtime 地形类型 `6..8` 有特殊分支：不取普通高度 byte，而是取另一个派生表的 byte+7，再乘 `0.5`。因此河/水高度不能用普通地面高度图直接判断。
+- 按 IDB 的 `0x417770` 坐标换算，逻辑格 `(125,65)` 映射到 K3ST control 坐标约 `(614,376)`。该点附近 `control_b00=0`，符合河/水低洼的视觉直觉；但截图显示该格为“河”，而 IDB 在 `0x417770` 对 runtime 地形类型 `6..8` 有特殊分支：不取普通地面高度 byte，而是取另一个派生表的 byte+7，再乘 `0.5`。因此河/水高度不能只用普通地面高度图直接判断。
 
-当前结论：K3ST 不再只是“通道诊断图”，而是 `default.stg` 的核心 stage 数据。`control_b00` 更适合作为当前 viewer 的视觉高度代理；`idb_ground_height_byte` 是普通地面分支的 IDB 诊断层；`derived_b07` 是水/河分支高度来源。剩余问题是 control record 其他 byte 的语义、qword bitfield 的完整 bit layout，以及 terrain mesh 分块/材质生成过程。
+当前结论：K3ST 不再只是“通道诊断图”，而是 `default.stg` 的核心 stage 数据。`control_b00` 是目前证据最强的地形高度/control byte；`control_b01..b03` 是 terrain diffuse color 候选，其中 `b02` 对应 green/brightness 分量；`aux_bits44_51_water_height` 是 `0x415e20` 消费的原始水/河高度 bitfield，`derived_b07` 是它按 `4x4` block 折叠后的运行时水/河高度来源。剩余问题是 control record 其他 byte 的语义、qword bitfield 的完整 bit layout，以及 terrain mesh 分块/材质生成过程。
 
 新的 IDB loader 约束：
 
 - `media/stage/default.hex` 在 `sub_5a1fe0` 中加载后，紧接着调用 `struct_map_grid_ARRAY` 相关函数 `0x484350`；另一个 `default.hex` 使用点 `sub_4a4f30` 也把资源送入 `0x6fb0e68 struct_map_grid_ARRAY`。这强化了 `default.hex/SHEX0008` 是逻辑格子层的判断。
 - `media/stage/default.stg` 在同一个 `sub_5a1fe0` 中加载，随后进入 `0x3260860` 的 `sub_41af90`。该函数会按 payload 类型分发：`K3ST` 进入 `sub_418fb0`，`GCOL` 进入 `sub_4191f0`，`OBJS` 进入 `sub_419280`。
 - `sub_418fb0` 对 `K3ST0006` 的读取大小与 `san11pkres.bin` entry `4793` 完全吻合：`8 + 1025*1025*8 + 1024*1024*8 = 16793616` 字节。因此 `media/stage/default.stg -> entry 4793 K3ST0006` 现在是高置信绑定。
-- `0x4176b0/0x417770` 是地形顶点坐标采样线索：X/Z 坐标乘 `5.0`，普通地面高度 byte 乘 `0.5`。普通分支读的是 K3ST expanded runtime 区的 shifted `b02`，不是 `control_b00`。当 runtime map grid 的地形低 5 bit 在 `6..8` 时，函数改读派生表 byte+7，也就是导出器的 `derived_b07`，并先加 `0.0025` 再乘 `0.5`。
+- `0x4176b0/0x417770` 是一条地形顶点坐标采样线索：X/Z 坐标乘 `5.0`，普通地面高度 byte 乘 `0.5`。已知调用点传入 `this+8`，所以普通分支读到的是 K3ST expanded runtime 区的 `control_b00`。当 runtime map grid 的地形低 5 bit 在 `6..8` 时，函数改读派生表 byte+7，也就是导出器的 `derived_b07`，并先加 `0.0025` 再乘 `0.5`。
+- `0x415bb0/0x4163b0` 是另一条 `control_b00` 高度证据链：`sub_415bb0` 读取 `this+0x800008+index*10`，即 `sub_418fb0` 展开的原始 `control_b00`，并乘 `0.5`；其调用链为 `415bb0 <- 4162d0 <- 4163b0 <- 417120`。`0x41f5f0` 的 ground draw path 会锁 vertex buffer，调用 `41dcb0/41e7a0/41eb60` 写入顶点，再经 `0x44d190` draw；这些 writer 也通过 `this+0x800008+index*10` 取得地形 record。因此 `control_b00` 应被看作 IDB-supported terrain height/control byte，而不是仅凭视觉猜测的高度图。
 
 exe 字符串中存在 `ShowGroundWireframe`、`ShowGroundPolygon`、`ShowWater`、`ShowDistantView`、`ViewHeight`、`WaterAnimTime`、`WaterRepetition` 等 stage/debug 配置名，进一步说明世界地图渲染层包含 ground polygon、水面和 distant view。后续需要用 IDA xref 确认这些配置读写的具体渲染函数，再反推 `default.stg`、`K3ST0006` 和 ground/water 贴图的绑定关系。
 
@@ -167,7 +169,7 @@ IDA 线索补充：
 - `buffer_descriptors.csv/json`：声明前一个 data entry 精确大小的小 descriptor entry
 - `buffer_streams.csv/json`：descriptor 中的 40 字节 stream 记录
 - `entry_*_GCOL0001/*_rgb.png`、`*_map_rgb.png` 和通道图
-- `entry_*_K3ST0006/*_control_b*.png`、`*_aux_qword_b*.png`、`*_derived_b*.png`
+- `entry_*_K3ST0006/*_control_b*.png`、`*_control_diffuse_b01_b02_b03*`、`*_aux_qword_b*.png`、`*_aux_bits44_51_*`、`*_aux_bits52_53_*`、`*_derived_b*.png`
 - `entry_*_OBJS0004/*_by_group.png`、`*_by_object_type.png` 散点图
 
 ## Data-buffer descriptor pair

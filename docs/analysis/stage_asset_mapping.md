@@ -147,11 +147,16 @@ Treat the world map as three related layers rather than a simple
    ```
 
    IDB `sub_418fb0` parses K3ST into a `1025x1025` control record area and a
-   `1024x1024` qword bitfield plane. `control_b00` visually behaves like a
-   terrain height proxy, while `0x4176b0/0x417770` sample a separate
-   ordinary-ground byte from the expanded runtime K3ST layout when building 3D
-   positions. Water/river cells read `derived_b07`, built by `0x415e20` from
-   the qword bitfield plane.
+   `1024x1024` qword bitfield plane. `control_b00` is now an IDB-supported
+   terrain height/control byte: it is expanded to `this+0x800008+index*10`,
+   sampled by `0x415bb0/0x4163b0`, scaled by `0.5`, and also reaches the
+   ground draw path through the terrain record pointers used by
+   `41dcb0/41e7a0/41eb60`. `0x4176b0/0x417770` known call sites pass
+   `this+8`, so their `ecx+0x800000+index*10` access also lands on expanded
+   `control_b00`. Water/river cells read `derived_b07`, built by `0x415e20`
+   from the qword bitfield plane. `control_b01..b03` are terrain diffuse color
+   candidates: `0x41dc00` packs them as `alpha<<24 | b01<<16 | b02<<8 | b03`,
+   so `b02` is the diffuse green/brightness component.
 
 3. Placed map objects:
 
@@ -266,9 +271,9 @@ Interpretation:
 - `sub_418fb0` consumes exactly `8 + 1025*1025*8 + 1024*1024*8` bytes for
   `K3ST0006`, matching `san11pkres.bin` entry `4793`.
 - `0x4176b0/0x417770` sample terrain vertex positions from the runtime K3ST
-  layout. The ordinary-ground branch reads a shifted expanded-control byte,
-  effectively previous-record `b02`, then scales it by `0.5`; terrain classes
-  `6..8` use `derived_b07` from the `0x415e20` table instead.
+  layout. Known call sites pass `this+8`, so the ordinary-ground branch reads
+  expanded `control_b00`, then scales it by `0.5`; terrain classes `6..8` use
+  `derived_b07` from the `0x415e20` table instead.
 - `sub_40f510` is a good target for `hex.wft`.
 - `sub_4224d0` and `sub_422eb0` are good targets for `water.wft`.
 - `sub_5a2a60` is a good target for `envinfo.sea`.
@@ -310,10 +315,13 @@ It is probably wrong to expect each logical map grid to have its own standalone
   trees, hazards, and special sites;
 - object `type` then selects a named stage model/texture family.
 
-The strongest current visual terrain-surface clue is `K3ST control_b00`: it
-keeps rivers and sea low while preserving mountain/highland structure. The
-IDB-ground-height diagnostic plane is still important, but it only explains the
-ordinary terrain branch; water and river cells branch to `derived_b07`.
+The strongest current terrain-surface clue is `K3ST control_b00`: it keeps
+rivers and sea low while preserving mountain/highland structure, and IDB
+evidence shows it is sampled as a terrain height/control byte. The b01/b02/b03
+triplet is now the strongest terrain-color clue, with `b02` acting as the
+diffuse green/brightness component. The exporter writes this triplet as
+`control_diffuse_b01_b02_b03`, which should be treated as a color layer rather
+than a height source. Water and river cells branch to `derived_b07`.
 `derived_b08` is a 4-bit corner mask comparing nearby `control_b00` values
 against `derived_b07`. `SHEX b01` still forms a map-shaped low-resolution
 field, but its `0..92` range looks more like a region/material/height-layer
@@ -321,7 +329,9 @@ index than a direct high-resolution height map.
 `aux_qword_b05` is also strongly water-related: water and river regions are
 high while most non-water terrain is near zero. It should be treated as a raw
 bitfield byte that contributes to derived water data, not as the final binary
-water mask.
+water mask. The IDB-backed fields are `aux_bits44_51_water_height`, which
+crosses raw bytes `b05/b06`, and `aux_bits52_53_water_flags`; `derived_b07`
+then folds the height field down to the runtime `256x256` water table.
 
 ## Next investigation targets
 
